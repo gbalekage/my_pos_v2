@@ -19,6 +19,10 @@ import UsersList from "./pages/admin/UsersList";
 import AddUser from "./pages/admin/AddUser";
 import PrintersList from "./pages/admin/PrintersList";
 import AddPrinters from "./pages/admin/AddPrinters";
+import AddStore from "./pages/admin/AddStore";
+import StoreList from "./pages/admin/StoreList";
+import AddCategory from "./pages/admin/AddCategory";
+import CategoryList from "./pages/admin/CategoryList";
 
 // Layout component for admin routes
 const AdminLayout = () => <Outlet />;
@@ -51,7 +55,6 @@ const App = () => {
           }
         />
 
-        {/* Admin group with single SubscriptionCheck */}
         <Route
           path="/admin"
           element={
@@ -63,7 +66,11 @@ const App = () => {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="account" element={<AdminAccount />} />
           <Route path="users/list" element={<UsersList />} />
+          <Route path="stores/list" element={<StoreList />} />
           <Route path="users/add" element={<AddUser />} />
+          <Route path="categories/add" element={<AddCategory />} />
+          <Route path="categories/list" element={<CategoryList />} />
+          <Route path="stores/add" element={<AddStore />} />
           <Route path="printers/list" element={<PrintersList />} />
           <Route path="printers/add" element={<AddPrinters />} />
         </Route>

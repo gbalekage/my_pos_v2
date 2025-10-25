@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Printer, Users } from "lucide-react";
+import { Building, Pen, Printer, ShoppingBag, Users } from "lucide-react";
 
 import { NavMain } from "@/components/admin/nav-main";
 import { NavUser } from "@/components/admin/nav-user";
@@ -62,7 +62,7 @@ export function AppSidebar({ ...props }) {
         title: "Users",
         url: "#",
         icon: Users,
-        isActive: true,
+        isActive: false,
         items: [
           { title: "Users List", url: "/admin/users/list" },
           { title: "Add User", url: "/admin/users/add" },
@@ -76,6 +76,26 @@ export function AppSidebar({ ...props }) {
         items: [
           { title: "Printer List", url: "/admin/printers/list" },
           { title: "Add Printer", url: "/admin/printers/add" },
+        ],
+      },
+      {
+        title: "Stores",
+        url: "#",
+        icon: ShoppingBag,
+        isActive: false,
+        items: [
+          { title: "Stores List", url: "/admin/stores/list" },
+          { title: "Add Store", url: "/admin/stores/add" },
+        ],
+      },
+      {
+        title: "Categories",
+        url: "#",
+        icon: Pen,
+        isActive: false,
+        items: [
+          { title: "Categories List", url: "/admin/categories/list" },
+          { title: "Add Category", url: "/admin/categories/add" },
         ],
       },
     ],

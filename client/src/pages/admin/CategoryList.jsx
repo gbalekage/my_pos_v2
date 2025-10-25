@@ -1,6 +1,6 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import axios from "axios";
-import { Loader, PrinterCheck, Users } from "lucide-react";
+import { Loader } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,128 +12,108 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 
-const PrintersList = () => {
-  const [printers, setPrinters] = useState([]);
+const CategoryList = () => {
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [deletePrinterId, setDeletePrinterId] = useState(null);
-  const [testPrinterId, setTestPrinterId] = useState(null);
-  const [testing, setTesting] = useState(false);
+  const [deleteCategoryId, setDeleteCategoryId] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const [editPrinter, setEditPrinter] = useState("");
+  const [editCategory, setEditCategory] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const fetchPrinters = async () => {
+  // Fetch all categories
+  const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/printers/");
-      setPrinters(res.data.printers);
+      const res = await axios.get("/api/categories/", { withCredentials: true });
+      setCategories(res.data.categories);
     } catch (error) {
-      console.error("Error geting printer");
-      toast.error("Error geting printers, try again");
+      console.error("Error getting categories:", error);
+      toast.error("Error getting categories, try again later");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPrinters();
+    fetchCategories();
   }, []);
 
-  const handleEditClick = (printer) => {
-    setEditPrinter(printer);
+  // Edit handlers
+  const handleEditClick = (category) => {
+    setEditCategory({ ...category });
     setIsEditDialogOpen(true);
   };
 
   const handleEditChange = (field, value) => {
-    setEditPrinter({ ...editPrinter, [field]: value });
+    setEditCategory((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleConfirmEdit = async () => {
-    if (!editPrinter?.id) return;
+    if (!editCategory?.id) return;
     setEditLoading(true);
     try {
       const res = await axios.put(
-        `/api/printers/update/${editPrinter.id}`,
+        `/api/categories/${editCategory.id}`,
         {
-          name: editPrinter.name,
-          ip: editPrinter.ip,
-          isDefault: editPrinter.isDefault,
+          name: editCategory.name,
+          description: editCategory.description,
         },
         { withCredentials: true }
       );
 
-      setPrinters(
-        printers.map((p) => (p.id === editPrinter.id ? res.data.printer : p))
+      setCategories((prev) =>
+        prev.map((cat) => (cat.id === editCategory.id ? res.data.category : cat))
       );
 
-      toast.success("Printer updated");
+      toast.success("Category updated successfully");
     } catch (error) {
-      console.error("Error updating printer:", error);
-      toast.error("Failed to update printer, please try refreshing the page");
+      console.error("Error updating category:", error);
+      toast.error("Failed to update category, please try again later");
     } finally {
-      setEditPrinter(null);
+      setEditCategory(null);
       setIsEditDialogOpen(false);
       setEditLoading(false);
     }
   };
 
-  const handleDeleteClick = (printerId) => {
-    setDeletePrinterId(printerId);
+  // Delete handlers
+  const handleDeleteClick = (categoryId) => {
+    setDeleteCategoryId(categoryId);
     setIsDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!deletePrinterId) return;
+    if (!deleteCategoryId) return;
     setDeleteLoading(true);
-
     try {
-      await axios.delete(`/api/printers/delete/${deletePrinterId}`, {
+      await axios.delete(`/api/categories/${deleteCategoryId}`, {
         withCredentials: true,
       });
-      setPrinters(printers.filter((p) => p.id !== deletePrinterId));
-      toast.success("Printer deleted successfully");
+      setCategories((prev) =>
+        prev.filter((cat) => cat.id !== deleteCategoryId)
+      );
+      toast.success("Category deleted successfully");
     } catch (error) {
-      console.error("Error deleting printer:", error);
-      toast.error("Failed to delete the printer");
+      console.error("Error deleting category:", error);
+      toast.error("Failed to delete category");
     } finally {
-      setDeletePrinterId(null);
+      setDeleteCategoryId(null);
       setIsDeleteDialogOpen(false);
       setDeleteLoading(false);
     }
   };
 
-  const handleTestPrinter = async (printerId) => {
-    if (!printerId) return;
-    setTestPrinterId(printerId);
-    setTesting(true);
-
-    try {
-      await axios.post(
-        `/api/printers/test/${printerId}`,
-        {},
-        { withCredentials: true }
-      );
-      toast.success("Printer tested successfully");
-    } catch (error) {
-      console.error("Error testing printer:", error);
-      toast.error("Failed to test the printer");
-    } finally {
-      setTesting(false);
-      setTestPrinterId(null);
-    }
-  };
-
+  // Loading state
   if (loading) {
     return (
       <AdminLayout>
         <div className="p-6 text-center text-muted-foreground flex justify-center items-center">
-          <Loader className="animate-spin size-4" />
+          <Loader className="animate-spin size-5" />
         </div>
       </AdminLayout>
     );
@@ -142,14 +122,14 @@ const PrintersList = () => {
   return (
     <AdminLayout>
       <div className="pl-6">
-        <h1 className="text-xl font-semibold mb-4">Printer Lists</h1>
+        <h1 className="text-xl font-semibold mb-4">Category List</h1>
 
-        {printers.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="text-center text-muted-foreground">
-            No printers found
+            No categories found
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg shad">
+          <div className="overflow-x-auto rounded-lg shadow">
             <table className="min-w-full divide-y">
               <thead>
                 <tr>
@@ -157,10 +137,7 @@ const PrintersList = () => {
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Ip Address
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Default
+                    Description
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
@@ -169,53 +146,26 @@ const PrintersList = () => {
               </thead>
 
               <tbody className="divide-y">
-                {printers.map((printer) => (
-                  <tr key={printer.id}>
+                {categories.map((category) => (
+                  <tr key={category.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {printer.name}
+                      {category.name || "-"}
                     </td>
-
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {printer.ip}
+                      {category.description || "—"}
                     </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          printer.isDefault
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {printer.isDefault ? "Yes" : "No"}
-                      </span>
-                    </td>
-
                     <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleTestPrinter(printer.id)}
-                        disabled={testing && testPrinterId === printer.id}
-                      >
-                        {testing && testPrinterId === printer.id ? (
-                          <Loader className="animate-spin size-4" />
-                        ) : (
-                          <PrinterCheck />
-                        )}
-                      </Button>
-
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleEditClick(printer)}
+                        onClick={() => handleEditClick(category)}
                       >
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDeleteClick(printer.id)}
+                        onClick={() => handleDeleteClick(category.id)}
                       >
                         Delete
                       </Button>
@@ -227,13 +177,14 @@ const PrintersList = () => {
           </div>
         )}
 
+        {/* Delete Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
             </DialogHeader>
             <p>
-              Are you sure you want to delete this printer? This action cannot
+              Are you sure you want to delete this category? This action cannot
               be undone.
             </p>
             <DialogFooter className="mt-4 flex justify-end gap-2">
@@ -254,34 +205,29 @@ const PrintersList = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Printer</DialogTitle>
+              <DialogTitle>Edit Category</DialogTitle>
             </DialogHeader>
 
-            {editPrinter && (
+            {editCategory && (
               <div className="space-y-4 mt-2">
                 <Input
-                  value={editPrinter.name}
-                  onChange={(e) => handleEditChange("name", e.target.value)}
+                  value={editCategory.name}
+                  onChange={(e) =>
+                    handleEditChange("name", e.target.value)
+                  }
                   placeholder="Name"
                 />
                 <Input
-                  value={editPrinter.ip}
-                  onChange={(e) => handleEditChange("ip", e.target.value)}
-                  placeholder="Ip Address"
+                  value={editCategory.description || ""}
+                  onChange={(e) =>
+                    handleEditChange("description", e.target.value)
+                  }
+                  placeholder="Description"
                 />
-
-                <div className="flex items-center gap-4">
-                  <span>Default:</span>
-                  <Switch
-                    checked={editPrinter.isDefault}
-                    onCheckedChange={(val) =>
-                      handleEditChange("isDefault", val)
-                    }
-                  />
-                </div>
               </div>
             )}
 
@@ -307,4 +253,4 @@ const PrintersList = () => {
   );
 };
 
-export default PrintersList;
+export default CategoryList;

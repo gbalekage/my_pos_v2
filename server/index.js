@@ -5,6 +5,8 @@ const adminRoutes = require("./routes/admin.routes")
 const  userRoutes = require("./routes/user.routes")
 const companyRoutes = require("./routes/company.routes");
 const printerRoutes = require("./routes/printer.routes");
+const storesRoutes = require("./routes/store.route")
+const categoryRoutes = require("./routes/category.route")
 const subscriptionRoutes = require("./routes/subscription.routes");
 const { notFound, errorHandler } = require("./middlewares/error.middleware");
 const fileUpload = require("express-fileupload");
@@ -31,6 +33,8 @@ app.use("/api/users", userRoutes)
 app.use("/api/company", companyRoutes)
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/printers", printerRoutes);
+app.use("/api/stores", storesRoutes)
+app.use("/api/categories", categoryRoutes)
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is online" });

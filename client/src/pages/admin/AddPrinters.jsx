@@ -26,7 +26,7 @@ import {
 const AddPrinters = () => {
   const [form, setForm] = useState({
     name: "",
-    type: "", // USB or ETHERNET
+    type: "",
     ip: "",
     port: 9100,
     isDefault: false,

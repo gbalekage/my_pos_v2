@@ -1,6 +1,6 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import axios from "axios";
-import { Loader, PrinterCheck, Users } from "lucide-react";
+import { Loader } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,119 +13,116 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
-const PrintersList = () => {
+const StoreList = () => {
+  const [stores, setStores] = useState([]);
   const [printers, setPrinters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [deletePrinterId, setDeletePrinterId] = useState(null);
-  const [testPrinterId, setTestPrinterId] = useState(null);
-  const [testing, setTesting] = useState(false);
+  const [deleteStoreId, setDeleteStoreId] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const [editPrinter, setEditPrinter] = useState("");
+  const [editStore, setEditStore] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const fetchPrinters = async () => {
+  // Fetch all stores
+  const fetchStores = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/printers/");
-      setPrinters(res.data.printers);
+      const res = await axios.get("/api/stores/");
+      setStores(res.data.stores);
     } catch (error) {
-      console.error("Error geting printer");
-      toast.error("Error geting printers, try again");
+      console.error("Error getting stores", error);
+      toast.error("Error getting stores, try again");
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch all printers
+  const fetchPrinters = async () => {
+    try {
+      const res = await axios.get("/api/printers");
+      setPrinters(res.data.printers || []);
+    } catch (error) {
+      console.error("Error fetching printers:", error);
+    }
+  };
+
   useEffect(() => {
+    fetchStores();
     fetchPrinters();
   }, []);
 
-  const handleEditClick = (printer) => {
-    setEditPrinter(printer);
+  const handleEditClick = (store) => {
+    setEditStore(store);
     setIsEditDialogOpen(true);
   };
 
   const handleEditChange = (field, value) => {
-    setEditPrinter({ ...editPrinter, [field]: value });
+    setEditStore({ ...editStore, [field]: value });
   };
 
   const handleConfirmEdit = async () => {
-    if (!editPrinter?.id) return;
+    if (!editStore?.id) return;
     setEditLoading(true);
     try {
       const res = await axios.put(
-        `/api/printers/update/${editPrinter.id}`,
+        `/api/stores/${editStore.id}`,
         {
-          name: editPrinter.name,
-          ip: editPrinter.ip,
-          isDefault: editPrinter.isDefault,
+          name: editStore.name,
+          printerId: editStore.printerId,
+          isActive: editStore.isActive,
         },
         { withCredentials: true }
       );
 
-      setPrinters(
-        printers.map((p) => (p.id === editPrinter.id ? res.data.printer : p))
+      setStores(
+        stores.map((s) => (s.id === editStore.id ? res.data.store : s))
       );
 
-      toast.success("Printer updated");
+      toast.success("Store updated successfully");
     } catch (error) {
-      console.error("Error updating printer:", error);
-      toast.error("Failed to update printer, please try refreshing the page");
+      console.error("Error updating store:", error);
+      toast.error("Failed to update store, please try again");
     } finally {
-      setEditPrinter(null);
+      setEditStore(null);
       setIsEditDialogOpen(false);
       setEditLoading(false);
     }
   };
 
-  const handleDeleteClick = (printerId) => {
-    setDeletePrinterId(printerId);
+  const handleDeleteClick = (storeId) => {
+    setDeleteStoreId(storeId);
     setIsDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!deletePrinterId) return;
+    if (!deleteStoreId) return;
     setDeleteLoading(true);
 
     try {
-      await axios.delete(`/api/printers/delete/${deletePrinterId}`, {
+      await axios.delete(`/api/stores/${deleteStoreId}`, {
         withCredentials: true,
       });
-      setPrinters(printers.filter((p) => p.id !== deletePrinterId));
-      toast.success("Printer deleted successfully");
+      setStores(stores.filter((p) => p.id !== deleteStoreId));
+      toast.success("Store deleted successfully");
     } catch (error) {
-      console.error("Error deleting printer:", error);
-      toast.error("Failed to delete the printer");
+      console.error("Error deleting store:", error);
+      toast.error("Failed to delete the store");
     } finally {
-      setDeletePrinterId(null);
+      setDeleteStoreId(null);
       setIsDeleteDialogOpen(false);
       setDeleteLoading(false);
-    }
-  };
-
-  const handleTestPrinter = async (printerId) => {
-    if (!printerId) return;
-    setTestPrinterId(printerId);
-    setTesting(true);
-
-    try {
-      await axios.post(
-        `/api/printers/test/${printerId}`,
-        {},
-        { withCredentials: true }
-      );
-      toast.success("Printer tested successfully");
-    } catch (error) {
-      console.error("Error testing printer:", error);
-      toast.error("Failed to test the printer");
-    } finally {
-      setTesting(false);
-      setTestPrinterId(null);
     }
   };
 
@@ -142,14 +139,14 @@ const PrintersList = () => {
   return (
     <AdminLayout>
       <div className="pl-6">
-        <h1 className="text-xl font-semibold mb-4">Printer Lists</h1>
+        <h1 className="text-xl font-semibold mb-4">Stores List</h1>
 
-        {printers.length === 0 ? (
+        {stores.length === 0 ? (
           <div className="text-center text-muted-foreground">
-            No printers found
+            No stores found
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg shad">
+          <div className="overflow-x-auto rounded-lg shadow">
             <table className="min-w-full divide-y">
               <thead>
                 <tr>
@@ -157,10 +154,10 @@ const PrintersList = () => {
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Ip Address
+                    Printer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Default
+                    Active
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
@@ -169,53 +166,35 @@ const PrintersList = () => {
               </thead>
 
               <tbody className="divide-y">
-                {printers.map((printer) => (
-                  <tr key={printer.id}>
+                {stores.map((store) => (
+                  <tr key={store.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">{store.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {printer.name}
+                      {store.printer?.name || "—"}
                     </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {printer.ip}
-                    </td>
-
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          printer.isDefault
+                          store.isActive
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {printer.isDefault ? "Yes" : "No"}
+                        {store.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
-
                     <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleTestPrinter(printer.id)}
-                        disabled={testing && testPrinterId === printer.id}
-                      >
-                        {testing && testPrinterId === printer.id ? (
-                          <Loader className="animate-spin size-4" />
-                        ) : (
-                          <PrinterCheck />
-                        )}
-                      </Button>
-
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleEditClick(printer)}
+                        onClick={() => handleEditClick(store)}
                       >
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDeleteClick(printer.id)}
+                        onClick={() => handleDeleteClick(store.id)}
                       >
                         Delete
                       </Button>
@@ -227,14 +206,15 @@ const PrintersList = () => {
           </div>
         )}
 
+        {/* Delete Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
             </DialogHeader>
             <p>
-              Are you sure you want to delete this printer? This action cannot
-              be undone.
+              Are you sure you want to delete this store? This action cannot be
+              undone.
             </p>
             <DialogFooter className="mt-4 flex justify-end gap-2">
               <Button
@@ -254,31 +234,46 @@ const PrintersList = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Printer</DialogTitle>
+              <DialogTitle>Edit Store</DialogTitle>
             </DialogHeader>
 
-            {editPrinter && (
+            {editStore && (
               <div className="space-y-4 mt-2">
                 <Input
-                  value={editPrinter.name}
+                  value={editStore.name}
                   onChange={(e) => handleEditChange("name", e.target.value)}
-                  placeholder="Name"
-                />
-                <Input
-                  value={editPrinter.ip}
-                  onChange={(e) => handleEditChange("ip", e.target.value)}
-                  placeholder="Ip Address"
+                  placeholder="Store name"
                 />
 
+                {/* Printer Selection Dropdown */}
+                <Select
+                  value={editStore.printerId || ""}
+                  onValueChange={(value) =>
+                    handleEditChange("printerId", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Printer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {printers.map((printer) => (
+                      <SelectItem key={printer.id} value={printer.id}>
+                        {printer.name} ({printer.ipAddress})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <div className="flex items-center gap-4">
-                  <span>Default:</span>
+                  <span>Active:</span>
                   <Switch
-                    checked={editPrinter.isDefault}
+                    checked={editStore.isActive}
                     onCheckedChange={(val) =>
-                      handleEditChange("isDefault", val)
+                      handleEditChange("isActive", val)
                     }
                   />
                 </div>
@@ -307,4 +302,4 @@ const PrintersList = () => {
   );
 };
 
-export default PrintersList;
+export default StoreList;
