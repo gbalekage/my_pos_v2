@@ -73,6 +73,8 @@ model Store {
 
   printerId String  @unique
   printer   Printer @relation(fields: [printerId], references: [id])
+
+  items Item[]
 }
 
 model Category {
@@ -81,6 +83,23 @@ model Category {
   description String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  items Item[]
+}
+
+model Item {
+  id         String   @id @default(cuid())
+  name       String
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  barcode    String   @unique
+  stock      Int
+  price      Float
+  package    String? 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum PrinterConnection {

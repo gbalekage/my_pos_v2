@@ -98,6 +98,16 @@ export function AppSidebar({ ...props }) {
           { title: "Add Category", url: "/admin/categories/add" },
         ],
       },
+      {
+        title: "Items",
+        url: "#",
+        icon: ShoppingBag, // or any other icon
+        isActive: false,
+        items: [
+          { title: "Items List", url: "/admin/items/list" },
+          { title: "Add Item", url: "/admin/items/add" },
+        ],
+      },
     ],
   };
 

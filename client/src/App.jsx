@@ -23,6 +23,8 @@ import AddStore from "./pages/admin/AddStore";
 import StoreList from "./pages/admin/StoreList";
 import AddCategory from "./pages/admin/AddCategory";
 import CategoryList from "./pages/admin/CategoryList";
+import ItemList from "./pages/admin/ItemList";
+import AddItem from "./pages/admin/AddItem";
 
 // Layout component for admin routes
 const AdminLayout = () => <Outlet />;
@@ -73,6 +75,8 @@ const App = () => {
           <Route path="stores/add" element={<AddStore />} />
           <Route path="printers/list" element={<PrintersList />} />
           <Route path="printers/add" element={<AddPrinters />} />
+          <Route path="items/list" element={<ItemList />} />
+          <Route path="items/add" element={<AddItem />} />
         </Route>
 
         {/* Other roles */}
