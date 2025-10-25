@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  username  String    @unique
+  name      String
+  email     String    @unique
+  password  String
+  role      UserRole  @default(ATTENDANT)
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  suspended Boolean   @default(false)
+}
+
+model Subscription {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  planType       PlanType           @default(MONTHLY)
+  duration       Int
+  activationCode String?
+  startDate      DateTime?
+  endDate        DateTime?
+  isActive       Boolean            @default(false)
+  status         SubscriptionStatus @default(INACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Restaurant {
+  id            String         @id @default(cuid())
+  name          String
+  address       String?
+  subscriptions Subscription[]
+  logoUrl       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  email         String         @unique
+  phoneNumber   String?
+}
+
+model Printer {
+  id        String            @id @default(cuid())
+  name      String
+  type      PrinterConnection @default(ETHERNET)
+  ip        String?
+  port      Int               @default(9100)
+  isDefault Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+enum PrinterConnection {
+  ETHERNET
+  USB
+}
+
+enum UserRole {
+  ATTENDANT
+  CASHIER
+  MANAGER
+  ADMIN
+}
+
+enum PlanType {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
