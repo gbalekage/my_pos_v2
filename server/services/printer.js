@@ -66,4 +66,5 @@ const printTestPage = async (printerConfig) => {
 
 module.exports = {
   printTestPage,
+  initPrinter
 };

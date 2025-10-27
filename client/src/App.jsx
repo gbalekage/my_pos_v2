@@ -25,6 +25,8 @@ import AddCategory from "./pages/admin/AddCategory";
 import CategoryList from "./pages/admin/CategoryList";
 import ItemList from "./pages/admin/ItemList";
 import AddItem from "./pages/admin/AddItem";
+import AddTables from "./pages/admin/AddTables";
+import TableList from "./pages/admin/TableList";
 
 // Layout component for admin routes
 const AdminLayout = () => <Outlet />;
@@ -77,6 +79,8 @@ const App = () => {
           <Route path="printers/add" element={<AddPrinters />} />
           <Route path="items/list" element={<ItemList />} />
           <Route path="items/add" element={<AddItem />} />
+          <Route path="tables/add" element={<AddTables />} />
+          <Route path="tables/list" element={<TableList />} />
         </Route>
 
         {/* Other roles */}

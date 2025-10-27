@@ -20,6 +20,8 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   suspended Boolean   @default(false)
+  Order     Order[]
+  Table     Table[]
 }
 
 model Subscription {
@@ -74,7 +76,8 @@ model Store {
   printerId String  @unique
   printer   Printer @relation(fields: [printerId], references: [id])
 
-  items Item[]
+  items  Item[]
+  orders Order[]
 }
 
 model Category {
@@ -88,18 +91,88 @@ model Category {
 }
 
 model Item {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   name       String
   storeId    String
-  store      Store    @relation(fields: [storeId], references: [id])
+  store      Store       @relation(fields: [storeId], references: [id])
   categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-  barcode    String   @unique
+  category   Category    @relation(fields: [categoryId], references: [id])
+  barcode    String      @unique
   stock      Int
   price      Float
-  package    String? 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  package    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  OrderItem  OrderItem[]
+}
+
+model Order {
+  id           String @id @default(cuid())
+  orderNumber  String @unique
+  restaurantId String
+
+  storeId String
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  attendantId String
+  attendant   User   @relation(fields: [attendantId], references: [id])
+
+  items OrderItem[]
+
+  totalAmount Float
+  paidAmount  Float       @default(0)
+  status      OrderStatus @default(PENDING)
+
+  paymentMethod PaymentMethod?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  closedAt  DateTime?
+
+  tableId String?
+  Table   Table? @relation("TableOrders", fields: [tableId], references: [id])
+
+  ActiveTable Table? @relation("TableActiveOrder")
+}
+
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id])
+  itemId   String
+  item     Item   @relation(fields: [itemId], references: [id])
+  quantity Int
+  price    Float
+  discount Float?
+}
+
+model Table {
+  id             String      @id @default(cuid())
+  number         Int         @unique
+  status         TableStatus @default(AVAILABLE)
+
+  order          Order[] @relation("TableOrders")
+
+  currentOrderId String?  @unique
+  currentOrder   Order?   @relation("TableActiveOrder", fields: [currentOrderId], references: [id])
+
+  attendantId    String?
+  attendant      User? @relation(fields: [userId], references: [id])
+  userId         String?
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE
+  OTHER
 }
 
 enum PrinterConnection {
@@ -112,6 +185,11 @@ enum UserRole {
   CASHIER
   MANAGER
   ADMIN
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
 }
 
 enum PlanType {
