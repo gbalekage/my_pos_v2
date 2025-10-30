@@ -697,6 +697,89 @@ const splitBill = async (req, res) => {
   }
 };
 
+const breakItemInOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { itemId, quantityToBreak } = req.body;
+
+    if (!orderId || !itemId || !quantityToBreak || quantityToBreak <= 0) {
+      return res.status(400).json({
+        message:
+          "Order ID, item ID, and quantity to break are required and must be valid.",
+      });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: { include: { item: true } } },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    const originalOrderItem = order.items.find((oi) => oi.itemId === itemId);
+
+    if (!originalOrderItem) {
+      return res.status(404).json({ message: "Item not found in the order." });
+    }
+
+    if (quantityToBreak >= originalOrderItem.quantity) {
+      return res.status(400).json({
+        message:
+          "The quantity to break must be less than the existing item quantity.",
+      });
+    }
+
+    const remainingQuantity = originalOrderItem.quantity - quantityToBreak;
+
+    // Update the original item quantity only
+    await prisma.orderItem.update({
+      where: { id: originalOrderItem.id },
+      data: { quantity: remainingQuantity },
+    });
+
+    // Create new order item for the broken quantity
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        itemId: originalOrderItem.itemId,
+        quantity: quantityToBreak,
+        price: originalOrderItem.price,
+      },
+    });
+
+    // Recalculate totalAmount dynamically
+    const updatedItems = await prisma.orderItem.findMany({
+      where: { orderId: order.id },
+    });
+
+    const newTotalAmount = updatedItems.reduce(
+      (sum, i) => sum + i.quantity * i.price, // calculate total dynamically
+      0
+    );
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { totalAmount: newTotalAmount },
+    });
+
+    return res.status(200).json({
+      message: "Item successfully split in the order.",
+      orderId: order.id,
+      splitItem: { itemId, quantity: quantityToBreak },
+      totalAmount: newTotalAmount,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error while splitting item in the order.",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createOrder,
   getOrderByTable,
@@ -705,4 +788,5 @@ module.exports = {
   removeItems,
   discountOrder,
   splitBill,
+  breakItemInOrder
 };

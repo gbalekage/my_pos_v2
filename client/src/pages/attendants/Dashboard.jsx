@@ -1,4 +1,5 @@
 import AddItems from "@/components/attendants/AddItems";
+import BreakItemModal from "@/components/attendants/BreakItems";
 import CreateOrder from "@/components/attendants/CreateOrder";
 import DiscountModal from "@/components/attendants/DiscountModal";
 import RemoveItems from "@/components/attendants/RemoveItems";
@@ -41,6 +42,7 @@ const AttendantDashboard = () => {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [splitModal, setSetSplitModal] = useState(false);
+  const [breakModal, setBreakModal] = useState(false);
 
   const fetchTables = async () => {
     try {
@@ -180,7 +182,10 @@ const AttendantDashboard = () => {
                     <Split />
                   </Button>
                   {/* Break items quantity */}
-                  <Button variant={"outline"}>
+                  <Button
+                    variant={"outline"}
+                    onClick={() => setBreakModal(true)}
+                  >
                     <SlashIcon />
                   </Button>
                 </div>
@@ -335,6 +340,16 @@ const AttendantDashboard = () => {
       {selectedTable && order && (
         <SplitOrder
           open={splitModal}
+          onclose={() => setSetSplitModal(false)}
+          order={order}
+          fetchTables={fetchTables}
+          setTable={setSelectedTable}
+        />
+      )}
+
+      {selectedTable && order && (
+        <BreakItemModal
+          open={breakModal}
           onclose={() => setSetSplitModal(false)}
           order={order}
           fetchTables={fetchTables}
