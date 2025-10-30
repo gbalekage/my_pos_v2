@@ -39,7 +39,7 @@ const plans = [
   {
     id: "yearly",
     name: "Yearly",
-    price: "$400 / Year",
+    price: "$350 / Year",
     description:
       "Ideal for small to large restaurants. Includes all POS features.",
     features: [

@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Table2,
   Users,
+  Users2,
 } from "lucide-react";
 
 import { NavMain } from "@/components/admin/nav-main";
@@ -140,6 +141,13 @@ export function AppSidebar({ ...props }) {
         icon: DollarSign,
         isActive: false,
         items: [{ title: "All Sales", url: "/admin/sales/all" }],
+      },
+      {
+        title: "Clients",
+        url: "#",
+        icon: Users2,
+        isActive: false,
+        items: [{ title: "Clients", url: "/admin/clients" }],
       },
     ],
   };

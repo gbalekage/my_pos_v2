@@ -9,24 +9,25 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  username      String          @unique
-  name          String
-  email         String          @unique
-  password      String
-  role          UserRole        @default(ATTENDANT)
-  isActive      Boolean         @default(true)
-  lastLogin     DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  suspended     Boolean         @default(false)
+  id        String    @id @default(cuid())
+  username  String    @unique
+  name      String
+  email     String    @unique
+  password  String
+  role      UserRole  @default(ATTENDANT)
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  suspended Boolean   @default(false)
 
   Order         Order[]
   Table         Table[]
   Cancellations Cancellations[]
   Discounts     Discount[]      @relation("UserDiscounts")
 
-  Sales         Sale[]
+  Sales       Sale[]
+  SignedBills SignedBills[] @relation("UserSignedBills")
 }
 
 model Subscription {
@@ -95,21 +96,21 @@ model Category {
 }
 
 model Item {
-  id         String      @id @default(cuid())
+  id         String   @id @default(cuid())
   name       String
   storeId    String
-  store      Store       @relation(fields: [storeId], references: [id])
+  store      Store    @relation(fields: [storeId], references: [id])
   categoryId String
-  category   Category    @relation(fields: [categoryId], references: [id])
-  barcode    String      @unique
+  category   Category @relation(fields: [categoryId], references: [id])
+  barcode    String   @unique
   stock      Int
   price      Float
   package    String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  OrderItem  OrderItem[]
-  SaleItems  SaleItem[]  // back-relation for sales
+  OrderItem OrderItem[]
+  SaleItems SaleItem[] // back-relation for sales
 }
 
 model Order {
@@ -135,9 +136,9 @@ model Order {
   tableId String?
   Table   Table?  @relation("TableOrders", fields: [tableId], references: [id])
 
-  ActiveTable Table? @relation("TableActiveOrder")
-
-  Discounts Discount[] @relation("OrderDiscounts")
+  ActiveTable Table?        @relation("TableActiveOrder")
+  SignedBills SignedBills[] @relation("OrderSignedBills")
+  Discounts   Discount[]    @relation("OrderDiscounts")
 }
 
 model OrderItem {
@@ -196,31 +197,56 @@ model Discount {
 }
 
 model Sale {
-  id            String      @id @default(cuid())
-  tableId       String?
-  table         Table?      @relation(fields: [tableId], references: [id])
-  attendantId   String
-  attendant     User        @relation(fields: [attendantId], references: [id])
-  totalAmount   Float
+  id             String        @id @default(cuid())
+  tableId        String?
+  table          Table?        @relation(fields: [tableId], references: [id])
+  attendantId    String
+  attendant      User          @relation(fields: [attendantId], references: [id])
+  totalAmount    Float
   receivedAmount Float
-  change        Float
-  paymentMethod PaymentMethod
-  status        OrderStatus @default(PENDING)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  change         Float
+  paymentMethod  PaymentMethod
+  status         OrderStatus   @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   items SaleItem[]
 }
 
 model SaleItem {
-  id      String @id @default(cuid())
-  saleId  String
-  sale    Sale   @relation(fields: [saleId], references: [id])
-  itemId  String
-  item    Item   @relation(fields: [itemId], references: [id])
+  id       String @id @default(cuid())
+  saleId   String
+  sale     Sale   @relation(fields: [saleId], references: [id])
+  itemId   String
+  item     Item   @relation(fields: [itemId], references: [id])
   quantity Int
   price    Float
   total    Float
+}
+
+model Client {
+  id          String        @id @default(cuid())
+  name        String
+  email       String        @unique
+  phone       String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  SignedBills SignedBills[] @relation("ClientSignedBills")
+}
+
+model SignedBills {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation("OrderSignedBills", fields: [orderId], references: [id])
+
+  attendantId String
+  attendant   User   @relation("UserSignedBills", fields: [attendantId], references: [id])
+
+  clientId String
+  client   Client @relation("ClientSignedBills", fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum OrderStatus {
