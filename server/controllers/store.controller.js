@@ -40,7 +40,7 @@ const getStores = async (req, res, next) => {
     const stores = await prisma.store.findMany({
       include: {
         printer: true,
-      },
+      }
     });
     res.status(200).json({ stores });
   } catch (error) {

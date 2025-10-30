@@ -1,6 +1,15 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Pen, Printer, ShoppingBag, Table2, Users } from "lucide-react";
+import {
+  Building,
+  DollarSign,
+  Pen,
+  Printer,
+  ShoppingBag,
+  ShoppingCart,
+  Table2,
+  Users,
+} from "lucide-react";
 
 import { NavMain } from "@/components/admin/nav-main";
 import { NavUser } from "@/components/admin/nav-user";
@@ -117,6 +126,20 @@ export function AppSidebar({ ...props }) {
           { title: "Tables List", url: "/admin/tables/list" },
           { title: "Add Tables", url: "/admin/tables/add" },
         ],
+      },
+      {
+        title: "Orders",
+        url: "#",
+        icon: ShoppingCart,
+        isActive: false,
+        items: [{ title: "Active Orders", url: "/admin/orders/active" }],
+      },
+      {
+        title: "Sales",
+        url: "#",
+        icon: DollarSign,
+        isActive: false,
+        items: [{ title: "All Sales", url: "/admin/sales/all" }],
       },
     ],
   };

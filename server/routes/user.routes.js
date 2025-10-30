@@ -13,6 +13,8 @@ const {
   deleteUser,
   updateUserPassword,
   verifyAdmin,
+  getAttendants,
+  getMe,
 } = require("../controllers/user.controller");
 
 const router = express.Router();
@@ -23,6 +25,8 @@ router.post(
   roleMiddleware("ADMIN", "MANAGER"),
   createUser
 );
+router.get("/attendants", getAttendants);
+router.get("/me", authMiddleware, getMe);
 router.post("/login-user", loginUser);
 router.put("/update-user/:id", authMiddleware, updateUser);
 router.post("/logout-user", logoutUser);
@@ -47,12 +51,7 @@ router.delete(
   deleteUser
 );
 
-router.put(
-  "/password/:id",
-  authMiddleware,
-  roleMiddleware("ADMIN", "MANAGER"),
-  updateUserPassword
-);
+router.put("/password", authMiddleware, updateUserPassword);
 
 router.post("/verify-admin", verifyAdmin);
 

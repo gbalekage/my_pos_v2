@@ -27,6 +27,8 @@ import ItemList from "./pages/admin/ItemList";
 import AddItem from "./pages/admin/AddItem";
 import AddTables from "./pages/admin/AddTables";
 import TableList from "./pages/admin/TableList";
+import ActiveOrders from "./pages/admin/ActiveOrders";
+import Sales from "./pages/admin/Sales";
 
 // Layout component for admin routes
 const AdminLayout = () => <Outlet />;
@@ -81,6 +83,8 @@ const App = () => {
           <Route path="items/add" element={<AddItem />} />
           <Route path="tables/add" element={<AddTables />} />
           <Route path="tables/list" element={<TableList />} />
+          <Route path="orders/active" element={<ActiveOrders />} />
+          <Route path="sales/all" element={<Sales />} />
         </Route>
 
         {/* Other roles */}

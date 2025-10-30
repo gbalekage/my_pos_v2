@@ -9,9 +9,11 @@ const {
   discountOrder,
   splitBill,
   breakItemInOrder,
+  getActiveOrders,
 } = require("../controllers/order.controller");
 const router = express.Router();
 
+router.get("/active", getActiveOrders);
 router.post("/create", authMiddleware, createOrder);
 router.get("/table/:id", authMiddleware, getOrderByTable);
 router.get("/print-bill/:tableId", authMiddleware, printBill);
@@ -20,5 +22,6 @@ router.delete("/remove-item/:orderId", removeItems);
 router.post("/:orderId/discount/", authMiddleware, discountOrder);
 router.post("/:orderId/split-bill/", authMiddleware, splitBill);
 router.post("/:orderId/break-items", authMiddleware, breakItemInOrder)
+
 
 module.exports = router;

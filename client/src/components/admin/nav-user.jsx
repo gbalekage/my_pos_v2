@@ -82,18 +82,6 @@ export function NavUser({ user }) {
                 </div>
               </div>
             </DropdownMenuLabel>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => {
-                navigate("/admin/account")
-              }}>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onClick={handleLogout}>

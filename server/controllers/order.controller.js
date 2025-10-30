@@ -779,6 +779,138 @@ const breakItemInOrder = async (req, res) => {
   }
 };
 
+const getActiveOrders = async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: { status: "PENDING" }, // only active orders
+      include: {
+        attendant: {
+          select: { id: true, name: true, username: true },
+        },
+        Table: {
+          select: { id: true, number: true },
+        },
+        items: {
+          include: {
+            item: true, // include the actual item details
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.status(200).json({ orders });
+  } catch (error) {
+    console.error("Error fetching active orders:", error);
+    return res.status(500).json({
+      message: "Erreur lors du chargement des commandes actives.",
+      error: error.message,
+    });
+  }
+};
+
+const payOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentMethod, receivedAmount } = req.body;
+
+    if (!orderId)
+      return res.status(400).json({ message: "Order selection is required." });
+
+    if (receivedAmount === undefined || receivedAmount === null)
+      return res.status(400).json({ message: "Received amount is required." });
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { item: true } },
+        Table: true,
+        attendant: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ message: "Order not found." });
+    if (order.status === "PAID")
+      return res
+        .status(400)
+        .json({ message: "This order has already been paid." });
+
+    const totalAmount = order.totalAmount;
+    if (receivedAmount < totalAmount) {
+      return res.status(400).json({
+        message: "Insufficient amount.",
+        remainingAmount: totalAmount - receivedAmount,
+      });
+    }
+
+    const change = receivedAmount - totalAmount;
+
+    // Prepare sale items
+    const saleItemsData = order.items.map((oi) => ({
+      itemId: oi.itemId,
+      quantity: oi.quantity,
+      price: oi.price,
+      total: oi.quantity * oi.price,
+    }));
+
+    // Create sale with nested sale items
+    const sale = await prisma.sale.create({
+      data: {
+        tableId: order.tableId,
+        attendantId: order.attendantId,
+        totalAmount: totalAmount,
+        paymentMethod: paymentMethod,
+        receivedAmount,
+        change,
+        status: "PAID",
+        items: {
+          create: saleItemsData.map((si) => ({
+            itemId: si.itemId,
+            quantity: si.quantity,
+            price: si.price,
+            total: si.total,
+          })),
+        },
+      },
+      include: { items: { include: { item: true } } },
+    });
+
+    // Free the table if any
+    if (order.tableId) {
+      await prisma.table.update({
+        where: { id: order.tableId },
+        data: { status: "AVAILABLE", currentOrderId: null },
+      });
+    }
+
+    // Update order as paid
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: "PAID",
+        paidAmount: receivedAmount,
+        closedAt: new Date(),
+      },
+    });
+
+    // Print receipt
+    await printReceipt(sale.id, order);
+
+    return res.status(200).json({
+      message: "Order has been paid and recorded as a sale.",
+      sale,
+      change,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error while processing the order payment.",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   createOrder,
@@ -788,5 +920,6 @@ module.exports = {
   removeItems,
   discountOrder,
   splitBill,
-  breakItemInOrder
+  breakItemInOrder,
+  getActiveOrders,
 };

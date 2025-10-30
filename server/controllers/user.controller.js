@@ -319,17 +319,27 @@ const deleteUser = async (req, res, next) => {
 
 const updateUserPassword = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { password } = req.body;
+    const id = req.user.id;
+    const { password, newPassword, confirmPassword } = req.body;
+    console.log("Body received:", req.body);  
 
-    if (!password || password.length < 4) {
-      return next(new HttpError("Password must be at least 6 characters", 400));
+    if (!password || !newPassword || !confirmPassword) {
+      return next(new HttpError("Please fill in all fields", 400));
+    }
+
+    if (newPassword !== confirmPassword) {
+      return next(new HttpError("New passwords do not match", 400));
     }
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return next(new HttpError("User not found", 404));
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return next(new HttpError("Current password is incorrect", 403));
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     await prisma.user.update({
       where: { id },
@@ -340,6 +350,48 @@ const updateUserPassword = async (req, res, next) => {
   } catch (error) {
     console.error("❌ Error updating password:", error);
     return next(new HttpError("Failed to update password", 500));
+  }
+};
+
+const getAttendants = async (req, res) => {
+  try {
+    const attendants = await prisma.user.findMany({
+      where: { role: "ATTENDANT", isActive: true },
+      select: { id: true, name: true },
+    });
+    res.status(200).json({ attendants });
+  } catch (error) {
+    console.error("Error fetching attendants:", error);
+    res.status(500).json({ message: "Failed to fetch attendants" });
+  }
+};
+
+const getMe = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Exclude password before returning user data
+    const { password, ...userData } = user;
+
+    return res.status(200).json({ user: userData });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return res.status(500).json({ message: "Error loading user data." });
   }
 };
 
@@ -354,5 +406,7 @@ module.exports = {
   suspendUser,
   deleteUser,
   updateUserPassword,
-  verifyAdmin
+  verifyAdmin,
+  getAttendants,
+  getMe,
 };
