@@ -815,98 +815,105 @@ const payOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { paymentMethod, receivedAmount } = req.body;
+    const userId = req.user.id;
 
     if (!orderId)
-      return res.status(400).json({ message: "Order selection is required." });
+      return res.status(400).json({ message: "Sélectionner une commande est requis." });
 
-    if (receivedAmount === undefined || receivedAmount === null)
-      return res.status(400).json({ message: "Received amount is required." });
+    if (receivedAmount == null)
+      return res.status(400).json({ message: "Le montant reçu est requis." });
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        items: { include: { item: true } },
         Table: true,
-        attendant: true,
+        items: {
+          include: {
+            item: true,
+          },
+        },
       },
     });
 
-    if (!order) return res.status(404).json({ message: "Order not found." });
-    if (order.status === "PAID")
-      return res
-        .status(400)
-        .json({ message: "This order has already been paid." });
+    if (!order) {
+      return res.status(404).json({ message: "Commande non trouvée." });
+    }
+
+    if (order.status === "PAID") {
+      return res.status(400).json({ message: "Cette commande est déjà payée." });
+    }
 
     const totalAmount = order.totalAmount;
+
     if (receivedAmount < totalAmount) {
+      const remainingAmount = totalAmount - receivedAmount;
       return res.status(400).json({
-        message: "Insufficient amount.",
-        remainingAmount: totalAmount - receivedAmount,
+        message: "Montant insuffisant.",
+        remainingAmount,
       });
     }
 
     const change = receivedAmount - totalAmount;
 
-    // Prepare sale items
-    const saleItemsData = order.items.map((oi) => ({
-      itemId: oi.itemId,
-      quantity: oi.quantity,
-      price: oi.price,
-      total: oi.quantity * oi.price,
-    }));
-
-    // Create sale with nested sale items
+    // 🧾 Créer la vente (Sale)
     const sale = await prisma.sale.create({
       data: {
         tableId: order.tableId,
         attendantId: order.attendantId,
-        totalAmount: totalAmount,
-        paymentMethod: paymentMethod,
+        totalAmount,
         receivedAmount,
         change,
-        status: "PAID",
+        paymentMethod,
         items: {
-          create: saleItemsData.map((si) => ({
-            itemId: si.itemId,
-            quantity: si.quantity,
-            price: si.price,
-            total: si.total,
+          create: order.items.map((orderItem) => ({
+            itemId: orderItem.itemId,
+            quantity: orderItem.quantity,
+            price: orderItem.price,
+            total: orderItem.price * orderItem.quantity,
           })),
         },
       },
-      include: { items: { include: { item: true } } },
-    });
-
-    // Free the table if any
-    if (order.tableId) {
-      await prisma.table.update({
-        where: { id: order.tableId },
-        data: { status: "AVAILABLE", currentOrderId: null },
-      });
-    }
-
-    // Update order as paid
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "PAID",
-        paidAmount: receivedAmount,
-        closedAt: new Date(),
+      include: {
+        table: true,
+        attendant: true,
+        items: {
+          include: { item: true },
+        },
       },
     });
 
-    // Print receipt
-    await printReceipt(sale.id, order);
+    if (order.tableId) {
+      await prisma.table.update({
+        where: { id: order.tableId },
+        data: {
+          status: "AVAILABLE",
+          currentOrderId: null,
+          attendantId: null,
+        },
+      });
+    }
+
+    // 🧹 Supprimer la commande une fois payée
+    await prisma.order.delete({
+      where: { id: orderId },
+    });
+
+    // 🖨️ (Optionnel) Imprimer le reçu
+    try {
+      await printReceipt(sale.id);
+    } catch (err) {
+      console.warn("Erreur impression reçue:", err.message);
+    }
 
     return res.status(200).json({
-      message: "Order has been paid and recorded as a sale.",
+      message: "Commande payée et enregistrée dans les ventes.",
       sale,
       change,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erreur lors du paiement:", error);
     return res.status(500).json({
-      message: "Error while processing the order payment.",
+      message: "Erreur lors du paiement de la commande.",
       error: error.message,
     });
   }

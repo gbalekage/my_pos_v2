@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building,
+  Delete,
   DollarSign,
   Pen,
   Printer,
@@ -148,6 +149,13 @@ export function AppSidebar({ ...props }) {
         icon: Users2,
         isActive: false,
         items: [{ title: "Clients", url: "/admin/clients" }],
+      },
+      {
+        title: "Cancellations",
+        url: "#",
+        icon: Delete,
+        isActive: false,
+        items: [{ title: "Cancellations", url: "/admin/cancellations" }],
       },
     ],
   };
