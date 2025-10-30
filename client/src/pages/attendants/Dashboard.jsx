@@ -4,14 +4,13 @@ import CreateOrder from "@/components/attendants/CreateOrder";
 import DiscountModal from "@/components/attendants/DiscountModal";
 import RemoveItems from "@/components/attendants/RemoveItems";
 import SplitOrder from "@/components/attendants/SplitOrder";
+import UserProfile from "@/components/attendants/UserProfile";
 import { ThemeButton } from "@/components/global/theme-btn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import axios from "axios";
 import {
-  BadgeCheck,
-  Clock,
   Loader,
   LogOutIcon,
   SlashIcon,
@@ -20,6 +19,7 @@ import {
   StepForward,
   Subscript,
   Trash,
+  User,
   X,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -43,6 +43,7 @@ const AttendantDashboard = () => {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [splitModal, setSetSplitModal] = useState(false);
   const [breakModal, setBreakModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const fetchTables = async () => {
     try {
@@ -231,7 +232,10 @@ const AttendantDashboard = () => {
           <div className="flex items-center gap-4">
             <ThemeButton />
             <LogOutIcon onClick={handleLogout} className="cursor-pointer" />
-            <X className="cursor-pointer" />
+            <User
+              className="cursor-pointer"
+              onClick={() => setShowProfileModal(true)}
+            />
           </div>
         </div>
 
@@ -354,6 +358,14 @@ const AttendantDashboard = () => {
           order={order}
           fetchTables={fetchTables}
           setTable={setSelectedTable}
+        />
+      )}
+
+      {user && (
+        <UserProfile
+          open={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={user}
         />
       )}
     </div>
