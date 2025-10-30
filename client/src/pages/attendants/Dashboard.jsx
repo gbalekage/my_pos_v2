@@ -2,6 +2,7 @@ import AddItems from "@/components/attendants/AddItems";
 import CreateOrder from "@/components/attendants/CreateOrder";
 import DiscountModal from "@/components/attendants/DiscountModal";
 import RemoveItems from "@/components/attendants/RemoveItems";
+import SplitOrder from "@/components/attendants/SplitOrder";
 import { ThemeButton } from "@/components/global/theme-btn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ const AttendantDashboard = () => {
   const [printing, setPrinting] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [splitModal, setSetSplitModal] = useState(false);
 
   const fetchTables = async () => {
     try {
@@ -163,16 +165,19 @@ const AttendantDashboard = () => {
                   >
                     <Trash />
                   </Button>
-                  {/* split items modal trigger */}
-                  <Button variant={"outline"}>
-                    <Split />
-                  </Button>
                   {/* Discount bill by % */}
                   <Button
                     variant={"outline"}
                     onClick={() => setShowDiscountModal(true)}
                   >
                     <Subscript />
+                  </Button>
+                  {/* split items modal trigger */}
+                  <Button
+                    variant={"outline"}
+                    onClick={() => setSetSplitModal(true)}
+                  >
+                    <Split />
                   </Button>
                   {/* Break items quantity */}
                   <Button variant={"outline"}>
@@ -302,6 +307,7 @@ const AttendantDashboard = () => {
           table={selectedTable}
           order={order}
           fetchTables={fetchTables}
+          setTable={setSelectedTable}
         />
       )}
 
@@ -323,6 +329,16 @@ const AttendantDashboard = () => {
           order={order}
           user={user}
           fetchTables={fetchTables}
+        />
+      )}
+
+      {selectedTable && order && (
+        <SplitOrder
+          open={splitModal}
+          onclose={() => setSetSplitModal(false)}
+          order={order}
+          fetchTables={fetchTables}
+          setTable={setSelectedTable}
         />
       )}
     </div>

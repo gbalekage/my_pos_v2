@@ -544,6 +544,159 @@ const discountOrder = async (req, res, next) => {
   }
 };
 
+const splitBill = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { itemsToSplit, newTableId } = req.body;
+
+    // --- Validation ---
+    if (
+      !orderId ||
+      !Array.isArray(itemsToSplit) ||
+      itemsToSplit.length === 0 ||
+      !newTableId
+    ) {
+      return res
+        .status(400)
+        .json({ message: "La commande, les items et la table sont requis." });
+    }
+
+    // --- Récupérer la commande originale ---
+    const originalOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { item: true } },
+        Table: true,
+      },
+    });
+
+    if (!originalOrder) {
+      return res
+        .status(404)
+        .json({ message: "Commande originale introuvable." });
+    }
+
+    let newItems = [];
+    let updatedOriginalItems = [];
+    let newTotalAmount = 0;
+    let updatedTotalAmount = 0;
+
+    // Créer un map des items à diviser
+    const splitMap = {};
+    for (const item of itemsToSplit) {
+      splitMap[item.itemId] = item.quantity;
+    }
+
+    // --- Séparation des items ---
+    for (const orderItem of originalOrder.items) {
+      const itemId = orderItem.itemId;
+      const splitQty = splitMap[itemId];
+
+      if (splitQty) {
+        if (splitQty > orderItem.quantity) {
+          return res.status(400).json({
+            message: `Quantité à diviser supérieure à celle existante pour l'article ${orderItem.item.name}.`,
+          });
+        }
+
+        // Nouvel item pour la nouvelle commande
+        newItems.push({
+          itemId: orderItem.itemId,
+          quantity: splitQty,
+          price: orderItem.price,
+          discount: orderItem.discount || 0,
+        });
+        newTotalAmount += orderItem.price * splitQty;
+
+        // Garder le reste dans la commande originale
+        const remainingQty = orderItem.quantity - splitQty;
+        if (remainingQty > 0) {
+          updatedOriginalItems.push({
+            ...orderItem,
+            quantity: remainingQty,
+            total: orderItem.price * remainingQty,
+          });
+          updatedTotalAmount += orderItem.price * remainingQty;
+        }
+      } else {
+        updatedOriginalItems.push(orderItem);
+        updatedTotalAmount += orderItem.price * orderItem.quantity;
+      }
+    }
+
+    // --- Mettre à jour la commande originale ---
+    await prisma.orderItem.deleteMany({
+      where: { orderId: originalOrder.id },
+    });
+
+    await prisma.order.update({
+      where: { id: originalOrder.id },
+      data: {
+        totalAmount: updatedTotalAmount,
+        items: {
+          create: updatedOriginalItems.map((i) => ({
+            itemId: i.itemId,
+            quantity: i.quantity,
+            price: i.price,
+            discount: i.discount || 0,
+          })),
+        },
+      },
+    });
+
+    // --- Créer la nouvelle commande ---
+    const newOrder = await prisma.order.create({
+      data: {
+        tableId: newTableId,
+        totalAmount: newTotalAmount,
+        attendantId: originalOrder.attendantId,
+        status: originalOrder.status,
+        items: {
+          create: newItems.map((i) => ({
+            itemId: i.itemId,
+            quantity: i.quantity,
+            price: i.price,
+            discount: i.discount || 0,
+          })),
+        },
+      },
+      include: {
+        items: { include: { item: true } },
+        Table: true,
+      },
+    });
+
+    // --- Mettre à jour la table ---
+    await prisma.table.update({
+      where: { id: newTableId },
+      data: {
+        status: "OCCUPIED",
+        currentOrderId: newOrder.id,
+        attendantId: newOrder.attendantId,
+      },
+    });
+
+    if (updatedOriginalItems.length === 0 && originalOrder.Table) {
+      await prisma.table.update({
+        where: { id: originalOrder.Table.id },
+        data: { status: "AVAILABLE", currentOrderId: null },
+      });
+    }
+
+    return res.status(201).json({
+      message: "Facture divisée avec succès.",
+      originalOrderId: originalOrder.id,
+      newOrder,
+    });
+  } catch (error) {
+    console.error("Erreur splitBill:", error);
+    return res.status(500).json({
+      message: "Erreur lors de la division de la facture.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderByTable,
@@ -551,4 +704,5 @@ module.exports = {
   addItemsToOrder,
   removeItems,
   discountOrder,
+  splitBill,
 };

@@ -3,10 +3,12 @@ import React, { useEffect, useState } from "react";
 import { Loader, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router-dom";
+import { useUserStore } from "@/store/userStore";
 
 const ITEMS_PER_PAGE = 20;
 
-const AddItems = ({ open, onClose, table, fetchTables, order }) => {
+const AddItems = ({ open, onClose, table, fetchTables, order, setTable }) => {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -14,6 +16,8 @@ const AddItems = ({ open, onClose, table, fetchTables, order }) => {
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [page, setPage] = useState(1);
+  const clearUser = useUserStore((state) => state.clearUser);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -108,6 +112,9 @@ const AddItems = ({ open, onClose, table, fetchTables, order }) => {
       toast.success("Items added successfully");
       onClose();
       if (typeof fetchTables === "function") fetchTables();
+      setTable(null);
+      clearUser();
+      navigate("/");
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error(error.response?.data?.message || "Failed to create order");
