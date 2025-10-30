@@ -62,12 +62,14 @@ const loginUser = async (req, res, next) => {
 
     // Only allow active and not suspended users
     if (!user.isActive || user.suspended) {
-      return next(new HttpError(
-        !user.isActive
-          ? "This account is not active, contact your manager"
-          : "This account is suspended, contact your manager",
-        403
-      ));
+      return next(
+        new HttpError(
+          !user.isActive
+            ? "This account is not active, contact your manager"
+            : "This account is suspended, contact your manager",
+          403
+        )
+      );
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -91,11 +93,34 @@ const loginUser = async (req, res, next) => {
     return res.status(200).json({
       message: "Login successful",
       user: userData,
-      token
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);
     return next(new HttpError("Login failed, please try again", 500));
+  }
+};
+
+const verifyAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user || user.role !== "ADMIN") {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+    }
+
+    return res.status(200).json({ success: true, message: "Admin verified" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -318,7 +343,6 @@ const updateUserPassword = async (req, res, next) => {
   }
 };
 
-
 module.exports = {
   createUser,
   loginUser,
@@ -329,5 +353,6 @@ module.exports = {
   deactivateUser,
   suspendUser,
   deleteUser,
-  updateUserPassword
+  updateUserPassword,
+  verifyAdmin
 };

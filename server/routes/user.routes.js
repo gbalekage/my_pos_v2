@@ -12,6 +12,7 @@ const {
   suspendUser,
   deleteUser,
   updateUserPassword,
+  verifyAdmin,
 } = require("../controllers/user.controller");
 
 const router = express.Router();
@@ -52,5 +53,7 @@ router.put(
   roleMiddleware("ADMIN", "MANAGER"),
   updateUserPassword
 );
+
+router.post("/verify-admin", verifyAdmin);
 
 module.exports = router;

@@ -9,19 +9,21 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  username  String    @unique
-  name      String
-  email     String    @unique
-  password  String
-  role      UserRole  @default(ATTENDANT)
-  isActive  Boolean   @default(true)
-  lastLogin DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  suspended Boolean   @default(false)
-  Order     Order[]
-  Table     Table[]
+  id            String          @id @default(cuid())
+  username      String          @unique
+  name          String
+  email         String          @unique
+  password      String
+  role          UserRole        @default(ATTENDANT)
+  isActive      Boolean         @default(true)
+  lastLogin     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  suspended     Boolean         @default(false)
+  Order         Order[]
+  Table         Table[]
+  Cancellations Cancellations[]
+  Discounts     Discount[]      @relation("UserDiscounts")
 }
 
 model Subscription {
@@ -76,8 +78,7 @@ model Store {
   printerId String  @unique
   printer   Printer @relation(fields: [printerId], references: [id])
 
-  items  Item[]
-  orders Order[]
+  items Item[]
 }
 
 model Category {
@@ -107,12 +108,9 @@ model Item {
 }
 
 model Order {
-  id           String @id @default(cuid())
-  orderNumber  String @unique
-  restaurantId String
-
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
+  id           String  @id @default(cuid())
+  orderNumber  String?
+  restaurantId String?
 
   attendantId String
   attendant   User   @relation(fields: [attendantId], references: [id])
@@ -130,11 +128,12 @@ model Order {
   closedAt  DateTime?
 
   tableId String?
-  Table   Table? @relation("TableOrders", fields: [tableId], references: [id])
+  Table   Table?  @relation("TableOrders", fields: [tableId], references: [id])
 
   ActiveTable Table? @relation("TableActiveOrder")
-}
 
+  Discounts Discount[] @relation("OrderDiscounts")
+}
 
 model OrderItem {
   id       String @id @default(cuid())
@@ -148,18 +147,44 @@ model OrderItem {
 }
 
 model Table {
-  id             String      @id @default(cuid())
-  number         Int         @unique
-  status         TableStatus @default(AVAILABLE)
+  id     String      @id @default(cuid())
+  number Int         @unique
+  status TableStatus @default(AVAILABLE)
 
-  order          Order[] @relation("TableOrders")
+  order Order[] @relation("TableOrders")
 
-  currentOrderId String?  @unique
-  currentOrder   Order?   @relation("TableActiveOrder", fields: [currentOrderId], references: [id])
+  currentOrderId String? @unique
+  currentOrder   Order?  @relation("TableActiveOrder", fields: [currentOrderId], references: [id])
 
-  attendantId    String?
-  attendant      User? @relation(fields: [userId], references: [id])
-  userId         String?
+  attendantId String?
+  attendant   User?   @relation(fields: [attendantId], references: [id])
+}
+
+model Cancellations {
+  id          String   @id @default(cuid())
+  name        String
+  quantity    Int
+  unitPrice   Int
+  totalPrice  Int
+  cancelledBy String?
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      String?
+  cancelledAt DateTime
+}
+
+model Discount {
+  id String @id @default(cuid())
+
+  discountedById String
+  discountedBy   User   @relation("UserDiscounts", fields: [discountedById], references: [id])
+
+  orderId String
+  order   Order  @relation("OrderDiscounts", fields: [orderId], references: [id])
+
+  discountPercentage Int
+  discountAmount     Float
+  newTotalAmount     Float
+  createdAt          DateTime @default(now())
 }
 
 enum OrderStatus {
