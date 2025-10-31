@@ -28,6 +28,7 @@ model User {
 
   Sales       Sale[]
   SignedBills SignedBills[] @relation("UserSignedBills")
+  Expences    Expences[]
 }
 
 model Subscription {
@@ -82,7 +83,8 @@ model Store {
   printerId String  @unique
   printer   Printer @relation(fields: [printerId], references: [id])
 
-  items Item[]
+  items    Item[]
+  Expences Expences[]
 }
 
 model Category {
@@ -245,6 +247,18 @@ model SignedBills {
   clientId String
   client   Client @relation("ClientSignedBills", fields: [clientId], references: [id])
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Expences {
+  id        String   @id @default(cuid())
+  amount    Float
+  date      DateTime @default(now())
+  createdBy String
+  user      User     @relation(fields: [createdBy], references: [id])
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
