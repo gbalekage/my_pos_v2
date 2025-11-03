@@ -139,7 +139,6 @@ model Order {
   Table   Table?  @relation("TableOrders", fields: [tableId], references: [id])
 
   ActiveTable Table?        @relation("TableActiveOrder")
-  SignedBills SignedBills[] @relation("OrderSignedBills")
   Discounts   Discount[]    @relation("OrderDiscounts")
 }
 
@@ -213,6 +212,7 @@ model Sale {
   updatedAt      DateTime      @updatedAt
 
   items SaleItem[]
+    signedBills    SignedBills[] @relation("SaleSignedBills")
 }
 
 model SaleItem {
@@ -238,8 +238,8 @@ model Client {
 
 model SignedBills {
   id      String @id @default(cuid())
-  orderId String
-  order   Order  @relation("OrderSignedBills", fields: [orderId], references: [id])
+  saleId      String
+  sale        Sale     @relation("SaleSignedBills", fields: [saleId], references: [id])
 
   attendantId String
   attendant   User   @relation("UserSignedBills", fields: [attendantId], references: [id])
@@ -256,6 +256,7 @@ model Expences {
   amount    Float
   date      DateTime @default(now())
   createdBy String
+  title     String
   user      User     @relation(fields: [createdBy], references: [id])
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id])
@@ -267,6 +268,7 @@ enum OrderStatus {
   PENDING
   PAID
   CANCELLED
+  SIGNED
 }
 
 enum PaymentMethod {
@@ -276,6 +278,7 @@ enum PaymentMethod {
   MPESA
   ORANGE_MONEY
   AFRI_MONEY
+  UNPAID
 }
 
 enum PrinterConnection {

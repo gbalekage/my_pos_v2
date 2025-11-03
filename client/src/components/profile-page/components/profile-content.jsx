@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { useUserStore } from "@/store/userStore";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ProfileContent() {
   const [company, setCompany] = useState(null);
@@ -267,7 +268,7 @@ export default function ProfileContent() {
             ) : sales.length === 0 ? (
               <p className="text-center py-4 text-gray-500">No sales found.</p>
             ) : (
-              <UiTable>
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableCell>Date</TableCell>
@@ -290,7 +291,7 @@ export default function ProfileContent() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </UiTable>
+              </Table>
             )}
           </CardContent>
         </Card>

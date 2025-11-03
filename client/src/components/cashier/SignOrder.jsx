@@ -15,35 +15,57 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import axios from "axios";
+import { Loader } from "lucide-react";
 
-const SignOrderModal = ({
-  isOpen,
-  onClose,
-  orderId,
-  customers = [],
-  onSuccess,
-}) => {
+const SignOrderModal = ({ isOpen, onClose, orderId, onSuccess }) => {
+  const [customers, setCustomers] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get("/api/clients/");
+      setCustomers(res.data.clients);
+      console.log("Response in get Client", res.data);
+    } catch (error) {
+      console.log("Error in get customer", error);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
       setSelectedClientId("");
+      fetchCustomers();
     }
   }, [isOpen]);
 
-  const handleSignOrder = () => {
+  const handleSignOrder = async () => {
     if (!selectedClientId) {
       toast.error("Please select a customer.");
       return;
     }
 
-    // Placeholder for signing logic
-    // Replace with your custom handler (e.g., context, local API, etc.)
-    console.log(`Order #${orderId} signed for customer ID: ${selectedClientId}`);
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `/api/orders/sign/${orderId}/${selectedClientId}`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
-    toast.success("Order signed successfully.");
-    onSuccess?.();
-    onClose();
+      console.log("Signed Bill Response:", res.data);
+
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.log("error in sign bill", error);
+      toast.error(error.response.data.message || "Error in sign bill");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!orderId) return null;
@@ -56,7 +78,7 @@ const SignOrderModal = ({
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-muted-foreground">
             Please select a customer for this signed invoice:
           </p>
           <Select value={selectedClientId} onValueChange={setSelectedClientId}>
@@ -66,12 +88,12 @@ const SignOrderModal = ({
             <SelectContent>
               {customers.length > 0 ? (
                 customers.map((customer) => (
-                  <SelectItem key={customer._id} value={customer._id}>
-                    {customer.fullName}
+                  <SelectItem key={customer._id} value={customer.id}>
+                    {customer.name}
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-2 text-gray-500 text-sm">
+                <div className="p-2 text-muted-foreground text-sm">
                   No customers available.
                 </div>
               )}
@@ -83,8 +105,11 @@ const SignOrderModal = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSignOrder} disabled={!selectedClientId}>
-            Confirm
+          <Button
+            onClick={handleSignOrder}
+            disabled={!selectedClientId || loading}
+          >
+            {loading ? <Loader className="animate-spin size-4" /> : "Confirm"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -93,6 +118,5 @@ const SignOrderModal = ({
 };
 
 export default SignOrderModal;
-
 
 // TODO: api calls for the cashoer, expenses controller, close day logic, etc.

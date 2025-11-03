@@ -3,17 +3,13 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import clsx from "clsx";
 import { toast } from "sonner";
-import { Loader, X } from "lucide-react";
+import { Loader, X, Keyboard, ClosedCaption } from "lucide-react"; // added Keyboard icon
 
 import { useUserStore } from "@/store/userStore";
 import OnScreenKeyboard from "@/components/main/OnScreenKeyboard";
 import { ThemeButton } from "@/components/global/theme-btn";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -68,7 +64,8 @@ const HomePage = () => {
     setShowLogin(true);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     if (!password) {
       toast.warning("Please enter your password.");
       return;
@@ -118,6 +115,13 @@ const HomePage = () => {
     }
   };
 
+  // Automatically focus input when popup opens
+  useEffect(() => {
+    if (showLogin && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showLogin]);
+
   // Close keyboard when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -132,6 +136,19 @@ const HomePage = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close popup when pressing Escape
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowLogin(false);
+        setPassword("");
+        setShowKeyboard(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
   }, []);
 
   if (loading) {
@@ -179,8 +196,24 @@ const HomePage = () => {
 
       {/* Login panel */}
       {showLogin && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-md w-full max-w-sm relative">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <form
+            onSubmit={handleLogin}
+            className="p-6 rounded-md w-full max-w-sm relative shadow-xl"
+          >
+            {/* Close popup button */}
+            <button
+              type="button" // ✅ prevents form submission
+              onClick={() => {
+                setShowLogin(false);
+                setPassword("");
+                setShowKeyboard(false);
+              }}
+              className="absolute top-3 right-3 transition"
+            >
+              <X size={22} />
+            </button>
+
             <h2 className="text-lg font-semibold mb-2">Login</h2>
             <p className="mb-4">
               Enter the password for <strong>{selectedUser?.username}</strong>
@@ -194,8 +227,16 @@ const HomePage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="text-center text-lg tracking-widest"
-                onFocus={() => setShowKeyboard(true)}
+                // onFocus={() => setShowKeyboard(true)}
               />
+
+              {/* Button to open keyboard manually */}
+              <button
+                onClick={() => setShowKeyboard((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+              >
+                <Keyboard size={20} />
+              </button>
 
               {/* Floating Keyboard */}
               {showKeyboard && (
@@ -224,15 +265,15 @@ const HomePage = () => {
             </div>
 
             <div className="mt-4">
-              <Button
-                onClick={handleLogin}
-                disabled={loginLoading}
-                className="w-full"
-              >
-                {loginLoading ? <Loader className="animate-spin size-4" /> : "Login"}
+              <Button disabled={loginLoading} className="w-full" type="submit">
+                {loginLoading ? (
+                  <Loader className="animate-spin size-4" />
+                ) : (
+                  "Login"
+                )}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

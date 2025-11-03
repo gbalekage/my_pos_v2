@@ -118,7 +118,7 @@ const CashierDashboard = () => {
       setExpenses({
         total: expensesRes.data.totalAmount || 0,
         count: expensesRes.data.count || 0,
-        expenses: expensesRes.data.expences || [],
+        expenses: expensesRes.data.expenses || [],
       });
     } catch (error) {
       console.error("Failed to fetch reports:", error);
@@ -323,7 +323,7 @@ const CashierDashboard = () => {
           </Button>
 
           <div
-            className={`absolute right-0 mt-2 w-48 rounded-lg shadow-lg z-10 ${
+            className={`absolute bg-white right-0 mt-2 w-48 rounded-lg shadow-lg z-10 ${
               isDropdownOpen ? "block" : "hidden"
             }`}
           >
@@ -370,61 +370,51 @@ const CashierDashboard = () => {
               />
             </div>
           </CardHeader>
+<CardContent
+  className="overflow-auto"
+  style={{ maxHeight: '48px + 6 * 48px' }} // header + 6 rows
+>
+  <Table className="min-w-full border-collapse">
+    <TableHeader>
+      <TableRow>
+        <TableHead className="sticky top-0">#</TableHead>
+        <TableHead className="sticky top-0">Table</TableHead>
+        <TableHead className="sticky top-0">Attendant</TableHead>
+        <TableHead className="sticky top-0">Amount</TableHead>
+        <TableHead className="sticky top-0">Status</TableHead>
+        <TableHead className="sticky top-0 text-right">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {filteredOrders.length === 0 ? (
+        <TableRow>
+          <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+            No active orders found.
+          </TableCell>
+        </TableRow>
+      ) : (
+        filteredOrders.map((order, index) => (
+          <TableRow key={order.id}>
+            <TableCell>{index + 1}</TableCell>
+            <TableCell>Table {order.Table?.number}</TableCell>
+            <TableCell>{order.attendant?.name}</TableCell>
+            <TableCell>{order.totalAmount.toLocaleString()} FC</TableCell>
+            <TableCell>
+              <span className="text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-xs">
+                {order.status}
+              </span>
+            </TableCell>
+            <TableCell className="text-right space-x-2">
+              <Button size="sm" onClick={() => handlePay(order.id)}>Pay</Button>
+              <Button variant="secondary" size="sm" onClick={() => handleSign(order.id)}>Sign</Button>
+            </TableCell>
+          </TableRow>
+        ))
+      )}
+    </TableBody>
+  </Table>
+</CardContent>
 
-          <CardContent className="overflow-auto max-h-96">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Table</TableHead>
-                  <TableHead>Attendant</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-6 text-muted-foreground"
-                    >
-                      No active orders found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredOrders.map((order, index) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>Table {order.Table?.number}</TableCell>
-                      <TableCell>{order.attendant?.name}</TableCell>
-                      <TableCell>
-                        {order.totalAmount.toLocaleString()} FC
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-xs">
-                          {order.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" onClick={() => handlePay(order.id)}>
-                          Pay
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleSign(order.id)}
-                        >
-                          Sign
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
         </Card>
       </section>
 

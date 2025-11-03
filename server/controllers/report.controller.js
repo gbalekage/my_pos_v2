@@ -35,9 +35,6 @@ const getOrderSummary = async (req, res, next) => {
       (sum, order) => sum + order.totalAmount,
       0
     );
-
-    console.log("Pending Orders:", pendingOrders);
-
     res.status(200).json({
       success: true,
       totalAmount,
@@ -163,6 +160,8 @@ const getTodayExpensesSummary = async (req, res, next) => {
     next(new HttpError("Failed to retrieve today's expenses total."));
   }
 };
+
+
 
 module.exports = {
   getOrderSummary,

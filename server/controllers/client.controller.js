@@ -36,7 +36,9 @@ const addClient = async (req, res, next) => {
 
 const getClients = async (req, res, next) => {
   try {
-    const clients = await prisma.client.findMany();
+    const clients = await prisma.client.findMany({
+      include: { SignedBills: true },
+    });
     res.status(200).json({ clients });
   } catch (error) {
     console.error("Error in get clients", error);
@@ -83,7 +85,7 @@ const updateClient = async (req, res, next) => {
 
 const deleteClient = async (req, res, next) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
 
     await prisma.client.delete({
       where: { id },

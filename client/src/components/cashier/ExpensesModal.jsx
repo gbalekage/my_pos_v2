@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const ExpensesModal = ({ open, onClose, expenses, formatCurrency }) => {
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">

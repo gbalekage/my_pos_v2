@@ -17,6 +17,7 @@ const salesRoutes = require("./routes/sales.routes");
 const clientsRoutes = require("./routes/client.routes");
 const cancellationsRoutes = require("./routes/cancellations.routes");
 const reportsRoutes = require("./routes/report.routes")
+const exprenseRoutes = require("./routes/expense.routes")
 
 const { notFound, errorHandler } = require("./middlewares/error.middleware");
 const fileUpload = require("express-fileupload");
@@ -52,6 +53,7 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/clients", clientsRoutes);
 app.use("/api/cancellations", cancellationsRoutes);
 app.use("/api/repports", reportsRoutes)
+app.use("/api/expenses", exprenseRoutes)
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is online" });

@@ -5,6 +5,7 @@ const {
   printOrder,
   printInvoice,
   printCancellation,
+  printSignedBill,
 } = require("../services/printer");
 
 const createOrder = async (req, res, next) => {
@@ -818,7 +819,9 @@ const payOrder = async (req, res) => {
     const userId = req.user.id;
 
     if (!orderId)
-      return res.status(400).json({ message: "Sélectionner une commande est requis." });
+      return res
+        .status(400)
+        .json({ message: "Sélectionner une commande est requis." });
 
     if (receivedAmount == null)
       return res.status(400).json({ message: "Le montant reçu est requis." });
@@ -840,7 +843,9 @@ const payOrder = async (req, res) => {
     }
 
     if (order.status === "PAID") {
-      return res.status(400).json({ message: "Cette commande est déjà payée." });
+      return res
+        .status(400)
+        .json({ message: "Cette commande est déjà payée." });
     }
 
     const totalAmount = order.totalAmount;
@@ -855,7 +860,6 @@ const payOrder = async (req, res) => {
 
     const change = receivedAmount - totalAmount;
 
-    // 🧾 Créer la vente (Sale)
     const sale = await prisma.sale.create({
       data: {
         tableId: order.tableId,
@@ -919,6 +923,109 @@ const payOrder = async (req, res) => {
   }
 };
 
+const signBill = async (req, res, next) => {
+  try {
+    const { orderId, clientId } = req.params;
+
+    if (!orderId) return res.status(400).json({ message: "Please select an order." });
+    if (!clientId) return res.status(400).json({ message: "Select a client (Customer)." });
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        Table: true,
+        items: { include: { item: true } },
+        attendant: true,
+      },
+    });
+
+    if (!order) return res.status(404).json({ message: "Order not found." });
+    if (order.status === "PAID")
+      return res.status(400).json({ message: "This order has already been paid." });
+
+    const client = await prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) return res.status(404).json({ message: "Client not found." });
+
+    // 🔹 Compute totals
+    const totalAmount = order.items.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0
+    );
+
+    // 🔹 Create sale
+    const sale = await prisma.sale.create({
+      data: {
+        tableId: order.tableId,
+        attendantId: order.attendantId,
+        totalAmount,
+        receivedAmount: 0,
+        change: 0,
+        paymentMethod: "UNPAID",
+        status: "SIGNED",
+        items: {
+          create: order.items.map((i) => ({
+            itemId: i.itemId,
+            quantity: i.quantity,
+            price: i.price,
+            total: i.price * i.quantity,
+          })),
+        },
+      },
+      include: {
+        table: true,
+        attendant: true,
+        items: { include: { item: true } },
+      },
+    });
+
+    // 🔹 Create signed bill
+    const signedBill = await prisma.signedBills.create({
+      data: {
+        saleId: sale.id,
+        attendantId: sale.attendantId,
+        clientId: client.id,
+      },
+      include: {
+        client: true,
+        attendant: true,
+        sale: true,
+      },
+    });
+
+    // 🔹 Free the table
+    if (order.tableId) {
+      await prisma.table.update({
+        where: { id: order.tableId },
+        data: {
+          status: "AVAILABLE",
+          currentOrderId: null,
+          attendantId: null,
+        },
+      });
+      console.log(`✅ Table ${order.Table?.number || ""} freed.`);
+    }
+
+    // 🔹 Clean up order
+    await prisma.orderItem.deleteMany({ where: { orderId } });
+    await prisma.order.delete({ where: { id: orderId } });
+
+    // 🔹 Print signed bill
+    await printSignedBill(sale, signedBill);
+
+    return res.status(200).json({
+      message: "Order signed successfully and printed.",
+      sale,
+      signedBill,
+    });
+  } catch (error) {
+    console.error("❌ Error signing bill:", error);
+    return res.status(500).json({
+      message: "Error while signing order.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderByTable,
@@ -929,4 +1036,7 @@ module.exports = {
   splitBill,
   breakItemInOrder,
   getActiveOrders,
+  signBill,
 };
+
+// TODO Continue with sigend Bills

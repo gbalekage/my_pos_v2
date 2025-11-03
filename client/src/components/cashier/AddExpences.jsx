@@ -17,10 +17,12 @@ import {
 } from "../ui/select";
 import axios from "axios";
 import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
   const [branches, setBranches] = useState([]);
   const [amount, setAmount] = useState("");
+  const [title, setTitle] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,9 +30,10 @@ const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        
+        const res = await axios.get("/api/stores/");
+        setBranches(res.data.stores);
       } catch (error) {
-        
+        toast.error(error.response?.data?.message || "Failed to get branches");
       }
     };
 
@@ -38,17 +41,35 @@ const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
       fetchBranches();
       setSelectedBranch("");
       setAmount("");
+      setTitle("");
     }
   }, [isOpen, token]);
 
   // Add new expense
   const handleAdd = async () => {
+    if (!selectedBranch || !title || !amount) {
+      toast.error("Please fill all fields.");
+      return;
+    }
 
+    setLoading(true);
     try {
-      
+      await axios.post(
+        `/api/expenses/add-expense/${selectedBranch}`,
+        {
+          title,
+          amount,
+        },
+        { withCredentials: true }
+      );
+
+      toast.success("Expense added successfully!");
+      onSuccess && onSuccess();
+      onClose();
     } catch (error) {
-      
+      toast.error(error.response?.data?.message || "Error adding the expense");
     } finally {
+      setLoading(false);
     }
   };
 
@@ -60,6 +81,17 @@ const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-4">
+          {/* Title */}
+          <div>
+            <label className="block font-semibold mb-1">Title</label>
+            <Input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter expense title"
+            />
+          </div>
+
           {/* Amount */}
           <div>
             <label className="block font-semibold mb-1">Amount (FC)</label>
@@ -91,7 +123,10 @@ const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
                   </p>
                 ) : (
                   branches.map((branch) => (
-                    <SelectItem key={branch.id || branch._id} value={branch.id || branch._id}>
+                    <SelectItem
+                      key={branch.id || branch._id}
+                      value={branch.id || branch._id}
+                    >
                       {branch.name}
                     </SelectItem>
                   ))
@@ -106,7 +141,7 @@ const AddExpenseModal = ({ isOpen, onClose, token, onSuccess }) => {
             Cancel
           </Button>
           <Button onClick={handleAdd} disabled={loading}>
-            {loading ? "Saving..." : "Confirm"}
+            {loading ? <Loader className="animate-spin size-4" /> : "Confirm"}
           </Button>
         </DialogFooter>
       </DialogContent>
