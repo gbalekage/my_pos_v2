@@ -16,6 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Loader } from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
 
 const paymentMethods = [
   { value: "CASH", label: "Cash" },
@@ -32,6 +35,7 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
   const [payModal, setPayModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0].value);
   const [receivedAmount, setReceivedAmount] = useState("");
+  const [loading, setLaoding] = useState(false);
 
   const handleRowClick = (order) => {
     setSelectedOrder(order);
@@ -52,13 +56,20 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
   };
 
   const handlePaymentConfirm = async () => {
+    setLaoding(true);
     try {
-      // TODO: integrate payment API here
-      // Example: await axios.post(`/api/payments/${selectedOrder.id}`, { paymentMethod, receivedAmount })
+      await axios.post(
+        `/api/orders/payment/signed-bill/${selectedOrder.id}`,
+        { paymentMethod, receivedAmount: parseFloat(receivedAmount) },
+        { withCredentials: true }
+      );
       onSuccess && onSuccess();
       closeModals();
     } catch (error) {
       console.error("Payment failed", error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLaoding(false);
     }
   };
 
@@ -249,7 +260,13 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Confirm</Button>
+                <Button type="submit" disable={loading}>
+                  {loading ? (
+                    <Loader className="animate-spin size-4" />
+                  ) : (
+                    "Confirm"
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           )}

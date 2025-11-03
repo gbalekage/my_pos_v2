@@ -6,6 +6,7 @@ const {
   printInvoice,
   printCancellation,
   printSignedBill,
+  printReceipt,
 } = require("../services/printer");
 
 const createOrder = async (req, res, next) => {
@@ -812,7 +813,7 @@ const getActiveOrders = async (req, res) => {
   }
 };
 
-const payOrder = async (req, res) => {
+const payOrder = async (req, res, next) => {
   try {
     const { orderId } = req.params;
     const { paymentMethod, receivedAmount } = req.body;
@@ -826,6 +827,7 @@ const payOrder = async (req, res) => {
     if (receivedAmount == null)
       return res.status(400).json({ message: "Le montant reçu est requis." });
 
+    // Find the order with its items
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -860,6 +862,7 @@ const payOrder = async (req, res) => {
 
     const change = receivedAmount - totalAmount;
 
+    // Create Sale from Order
     const sale = await prisma.sale.create({
       data: {
         tableId: order.tableId,
@@ -868,6 +871,7 @@ const payOrder = async (req, res) => {
         receivedAmount,
         change,
         paymentMethod,
+        status: "PAID", // mark the sale as PAID
         items: {
           create: order.items.map((orderItem) => ({
             itemId: orderItem.itemId,
@@ -880,12 +884,11 @@ const payOrder = async (req, res) => {
       include: {
         table: true,
         attendant: true,
-        items: {
-          include: { item: true },
-        },
+        items: { include: { item: true } },
       },
     });
 
+    // Update table status if applicable
     if (order.tableId) {
       await prisma.table.update({
         where: { id: order.tableId },
@@ -897,16 +900,26 @@ const payOrder = async (req, res) => {
       });
     }
 
-    // 🧹 Supprimer la commande une fois payée
-    await prisma.order.delete({
-      where: { id: orderId },
+    // Delete all order items of the order
+    await prisma.orderItem.deleteMany({
+      where: { orderId: order.id },
     });
 
-    // 🖨️ (Optionnel) Imprimer le reçu
+    // Delete the order itself
+    await prisma.order.delete({
+      where: { id: order.id },
+    });
+
+    // Optionally print receipt
     try {
       await printReceipt(sale.id);
     } catch (err) {
       console.warn("Erreur impression reçue:", err.message);
+      return next(
+        new HttpError(
+          "Failed to print, check your printer connexion, and try again"
+        )
+      );
     }
 
     return res.status(200).json({
@@ -927,8 +940,10 @@ const signBill = async (req, res, next) => {
   try {
     const { orderId, clientId } = req.params;
 
-    if (!orderId) return res.status(400).json({ message: "Please select an order." });
-    if (!clientId) return res.status(400).json({ message: "Select a client (Customer)." });
+    if (!orderId)
+      return res.status(400).json({ message: "Please select an order." });
+    if (!clientId)
+      return res.status(400).json({ message: "Select a client (Customer)." });
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -941,7 +956,9 @@ const signBill = async (req, res, next) => {
 
     if (!order) return res.status(404).json({ message: "Order not found." });
     if (order.status === "PAID")
-      return res.status(400).json({ message: "This order has already been paid." });
+      return res
+        .status(400)
+        .json({ message: "This order has already been paid." });
 
     const client = await prisma.client.findUnique({ where: { id: clientId } });
     if (!client) return res.status(404).json({ message: "Client not found." });
@@ -1002,7 +1019,6 @@ const signBill = async (req, res, next) => {
           attendantId: null,
         },
       });
-      console.log(`✅ Table ${order.Table?.number || ""} freed.`);
     }
 
     // 🔹 Clean up order
@@ -1026,6 +1042,73 @@ const signBill = async (req, res, next) => {
   }
 };
 
+const receivePayment = async (req, res, next) => {
+  try {
+    const { signedBillId } = req.params;
+    const { paymentMethod, receivedAmount } = req.body;
+
+    if (!signedBillId || !paymentMethod || receivedAmount == null) {
+      return res.status(400).json({ message: "Données incomplètes." });
+    }
+
+    const signedBill = await prisma.signedBills.findUnique({
+      where: { id: signedBillId },
+      include: {
+        attendant: true,
+        client: true,
+        sale: {
+          include: {
+            table: true,
+            attendant: true,
+          },
+        },
+      },
+    });
+
+    if (receivedAmount < signedBill.sale.totalAmount) {
+      return res.status(400).json({
+        message: `Le montant reçu (${receivedAmount}) est insuffisant. Le montant total dû est ${ssignedBill.sale.totalAmount}.`,
+      });
+    }
+
+    const change = receivedAmount - signedBill.sale.totalAmount;
+
+    const updatedSale = await prisma.sale.update({
+      where: { id: signedBill.saleId },
+      data: {
+        paymentMethod,
+        status: "PAID",
+        change,
+      },
+    });
+
+    await prisma.signedBills.delete({
+      where: { id: signedBill.id },
+    });
+
+    try {
+      await printReceipt(updatedSale.id);
+    } catch (err) {
+      console.warn("Erreur impression reçue:", err.message);
+      return next(
+        new HttpError(
+          "Failed to print, check your printer connexion, and try again"
+        )
+      );
+    }
+
+    return res.status(200).json({
+      message: "Commande payée et enregistrée dans les ventes.",
+    });
+  } catch (error) {
+    console.error("Erreur lors du paiement:", error);
+    return res.status(500).json({
+      message: "Erreur lors du paiement de la commande.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderByTable,
@@ -1037,6 +1120,8 @@ module.exports = {
   breakItemInOrder,
   getActiveOrders,
   signBill,
+  payOrder,
+  receivePayment,
 };
 
 // TODO Continue with sigend Bills

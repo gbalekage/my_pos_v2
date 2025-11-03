@@ -31,7 +31,7 @@ const AttendantDashboard = () => {
   const clearUser = useUserStore((state) => state.clearUser);
   const [tables, setTables] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const tablesPerPage = 20;
+  const tablesPerPage = 15;
   const navigate = useNavigate();
   const [selectedTable, setSelectedTable] = useState(null);
   const [order, setOrder] = useState(null);

@@ -186,7 +186,7 @@ const HomePage = () => {
             >
               <CardHeader className="flex items-center justify-center p-0">
                 <CardTitle className="text-center text-lg font-medium tracking-tighter">
-                  {user.name}
+                  {user.username}
                 </CardTitle>
               </CardHeader>
             </Card>

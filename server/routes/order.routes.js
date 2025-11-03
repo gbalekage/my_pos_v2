@@ -11,6 +11,8 @@ const {
   breakItemInOrder,
   getActiveOrders,
   signBill,
+  payOrder,
+  receivePayment,
 } = require("../controllers/order.controller");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 const router = express.Router();
@@ -29,6 +31,18 @@ router.post(
   authMiddleware,
   roleMiddleware("CASHIER"),
   signBill
+);
+router.post(
+  "/payment/:orderId",
+  authMiddleware,
+  roleMiddleware("CASHIER"),
+  payOrder
+);
+router.post(
+  "/payment/signed-bill/:signedBillId",
+  authMiddleware,
+  roleMiddleware("CASHIER"),
+  receivePayment
 );
 
 module.exports = router;

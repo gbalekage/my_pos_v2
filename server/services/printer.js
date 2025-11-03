@@ -313,6 +313,109 @@ const printSignedBill = async (sale, signedBill) => {
   }
 };
 
+// ----------------------
+// 🖨️ Print Sale Receipt
+// ----------------------
+const printReceipt = async (saleOrId) => {
+  try {
+    // 1️⃣ Get printer config
+    let printerConfig;
+    try {
+      printerConfig = await defaultPrinter();
+    } catch {
+      console.warn("Imprimante par défaut introuvable, tentative 'Bar Printer'...");
+      printerConfig = await prisma.printer.findFirst({ where: { name: "Bar Printer" } });
+      if (!printerConfig) throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
+    }
+
+    const printer = await initPrinter(printerConfig);
+    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+
+    // 2️⃣ Get sale data
+    let sale;
+    if (typeof saleOrId === "string") {
+      sale = await prisma.sale.findUnique({
+        where: { id: saleOrId },
+        include: {
+          table: true,
+          attendant: true,
+          items: { include: { item: true } },
+        },
+      });
+      if (!sale) throw new Error("Vente introuvable pour impression.");
+    } else {
+      sale = saleOrId;
+    }
+
+    // 3️⃣ Get company info
+    const company = await prisma.restaurant.findFirst();
+    if (!company) throw new Error("Aucune information sur le restaurant.");
+
+    // 4️⃣ Print logo
+    if (company.logoUrl) {
+      const logoPath = path.join(__dirname, "../uploads/company/logo/", path.basename(company.logoUrl));
+      if (fs.existsSync(logoPath)) {
+        const resized = path.join(__dirname, "../uploads/company/logo/resized-logo.png");
+        await sharp(logoPath).resize({ width: 300 }).toFormat("png").toFile(resized);
+        printer.alignCenter();
+        await printer.printImage(resized);
+        printer.newLine();
+      }
+    }
+
+    // 5️⃣ Header
+    printer.alignCenter();
+    printer.bold(true);
+    printer.println(company.name);
+    if (company.email) printer.println(company.email);
+    if (company.phone) printer.println(company.phone);
+    printer.drawLine();
+
+    printer.println("REÇU CLIENT");
+    printer.drawLine();
+
+    // 6️⃣ Sale info
+    printer.alignLeft();
+    printer.println(`Date : ${new Date(sale.createdAt).toLocaleString("fr-FR")}`);
+    printer.println(`Serveur : ${sale.attendant?.name || "N/A"}`);
+    printer.println(`Table : ${sale.table?.number || "N/A"}`);
+    printer.println(`Mode de paiement : ${sale.paymentMethod || "CASH"}`);
+    printer.drawLine();
+
+    // 7️⃣ Items
+    printer.bold(true);
+    printer.println("Article           Qty    PU        Total");
+    printer.bold(false);
+    printer.drawLine();
+
+    sale.items.forEach((item) => {
+      if (!item?.item?.name) return;
+      const name = item.item.name.length > 15 ? item.item.name.substring(0, 15) + "." : item.item.name.padEnd(16, " ");
+      const qty = String(item.quantity).padStart(3, " ");
+      const pu = formatCurrency(item.price).padStart(10, " ");
+      const total = formatCurrency(item.total).padStart(10, " ");
+      printer.println(`${name} ${qty} ${pu} ${total}`);
+    });
+
+    printer.drawLine();
+    printer.alignRight();
+    printer.bold(true);
+    printer.println(`TOTAL   : ${formatCurrency(sale.totalAmount)}`);
+    printer.println(`REÇU    : ${formatCurrency(sale.receivedAmount)}`);
+    printer.println(`RENDU   : ${formatCurrency(sale.change)}`);
+    printer.bold(false);
+
+    printer.alignCenter();
+    printer.drawLine();
+    printer.println("Merci pour votre visite !");
+    printer.cut();
+
+    await printer.execute();
+  } catch (error) {
+    console.error("Erreur impression reçu :", error);
+  }
+};
+
 
 module.exports = {
   printTestPage,
@@ -321,4 +424,5 @@ module.exports = {
   printInvoice,
   printCancellation,
   printSignedBill,
+  printReceipt
 };

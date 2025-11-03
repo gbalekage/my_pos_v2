@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -10,8 +10,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import axios from "axios";
+import { Loader } from "lucide-react"; // <-- Loader icon
 
-// ✅ Match backend enum values (Prisma)
 const paymentMethods = [
   { value: "CASH", label: "Cash" },
   { value: "CARD", label: "Card" },
@@ -33,7 +33,7 @@ const PayOrderModal = ({
   const [amountReceived, setAmountReceived] = useState("");
   const [change, setChange] = useState(0);
   const [loading, setLoading] = useState(false);
-  // Reset form when modal opens
+
   useEffect(() => {
     if (isOpen) {
       setAmountReceived("");
@@ -42,14 +42,38 @@ const PayOrderModal = ({
     }
   }, [isOpen]);
 
-  // Calculate change to return
   useEffect(() => {
     const received = parseFloat(amountReceived);
     setChange(!isNaN(received) ? received - totalAmount : 0);
   }, [amountReceived, totalAmount]);
 
   const handleConfirmPayment = async () => {
+    if (!orderId) return;
 
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `/api/orders/payment/${orderId}`,
+        {
+          paymentMethod,
+          receivedAmount: parseFloat(amountReceived),
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data) {
+        toast.success("Payment successful!");
+        onPaymentSuccess && onPaymentSuccess();
+        setPayModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Payment failed:", error);
+      const message =
+        error.response?.data?.message || "Payment failed. Try again.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!orderId) return null;
@@ -89,7 +113,7 @@ const PayOrderModal = ({
               type="text"
               readOnly
               value={totalAmount.toLocaleString("en-US")}
-              className="w-full p-2 border rounded bg-gray-100"
+              className="w-full p-2 border rounded"
             />
           </div>
 
@@ -114,8 +138,10 @@ const PayOrderModal = ({
             <input
               type="text"
               readOnly
-              value={change >= 0 ? change.toFixed(2).toLocaleString("en-US") : "-"}
-              className={`w-full p-2 border rounded bg-gray-100 ${
+              value={
+                change >= 0 ? change.toFixed(2).toLocaleString("en-US") : "-"
+              }
+              className={`w-full p-2 border rounded ${
                 change < 0 ? "text-red-600 font-bold" : ""
               }`}
             />
@@ -126,8 +152,16 @@ const PayOrderModal = ({
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleConfirmPayment} disabled={loading || change < 0}>
-            {loading ? "Processing..." : "Confirm Payment"}
+          <Button
+            onClick={handleConfirmPayment}
+            disabled={loading || change < 0}
+            className="flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <Loader className="animate-spin size-4" />
+            ) : (
+              "Confirm Payment"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
