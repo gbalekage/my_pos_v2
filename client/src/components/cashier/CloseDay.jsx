@@ -8,6 +8,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
+import axios from "axios";
 
 // Match enum PaymentMethod in your Prisma schema
 const paymentMethods = [
@@ -33,7 +34,7 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
 
     if (!date) {
@@ -43,17 +44,29 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
 
     setLoading(true);
 
-    // Simulate a local save (can be replaced with an API call)
-    setTimeout(() => {
-      toast.success("Day closure saved locally.");
-      onSuccess?.({
-        date,
-        declaredAmounts,
-        notes,
-      });
-      setLoading(false);
+    try {
+      const response = await axios.post(
+        `/api/repports/close/${date}`,
+        {
+          declaredAmounts,
+          notes,
+        },
+        { withCredentials: true }
+      );
+
+      toast.success(response.data.message || "Day closed successfully.");
+
+      onSuccess?.(response.data.report);
       onClose();
-    }, 800);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.message ||
+          "An error occurred while closing the day."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,7 +83,9 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
 
         {/* Date Picker */}
         <div>
-          <label className="block text-sm font-medium mb-1">Date to close</label>
+          <label className="block text-sm font-medium mb-1">
+            Date to close
+          </label>
           <input
             type="date"
             value={date}
@@ -130,3 +145,5 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
 };
 
 export default CloseDay;
+
+// TODO: Add if a signed bill was paid onthe close date

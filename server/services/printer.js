@@ -9,7 +9,9 @@ const sharp = require("sharp");
 // 🔧 Helpers
 // ----------------------
 const defaultPrinter = async () => {
-  const printer = await prisma.printer.findFirst({ where: { isDefault: true } });
+  const printer = await prisma.printer.findFirst({
+    where: { isDefault: true },
+  });
   if (!printer) throw new Error("Aucune imprimante par défaut trouvée.");
   return printer;
 };
@@ -18,7 +20,6 @@ const formatCurrency = (amount) => {
   const n = amount || 0;
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " FC";
 };
-
 
 const initPrinter = async (printerConfig) => {
   return new ThermalPrinter({
@@ -34,6 +35,30 @@ const initPrinter = async (printerConfig) => {
     lineCharacter: "-",
   });
 };
+
+function printJustified(printer, label, value, lineLength = 42) {
+  const labelText = label.toUpperCase();
+  const valueText = value.toLocaleString();
+  const spaceLength = Math.max(
+    1,
+    lineLength - labelText.length - valueText.length
+  );
+  const spaces = " ".repeat(spaceLength);
+  printer.println(`${labelText}${spaces}${valueText}`);
+}
+
+function padRight(str, length) {
+  return str.length >= length
+    ? str.slice(0, length)
+    : str + " ".repeat(length - str.length);
+}
+
+function padLeft(str, length) {
+  str = str.toString();
+  return str.length >= length
+    ? str.slice(0, length)
+    : " ".repeat(length - str.length) + str;
+}
 
 // ----------------------
 // 🧪 Imprimer page test
@@ -66,10 +91,12 @@ const printOrder = async (items, storeId, attendantName) => {
       where: { id: storeId },
       include: { printer: true },
     });
-    if (!store?.printer) throw new Error("Aucune imprimante configurée pour ce magasin.");
+    if (!store?.printer)
+      throw new Error("Aucune imprimante configurée pour ce magasin.");
 
     const printer = await initPrinter(store.printer);
-    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Imprimante non connectée.");
 
     printer.alignCenter();
     printer.bold(true);
@@ -89,7 +116,10 @@ const printOrder = async (items, storeId, attendantName) => {
     printer.drawLine();
 
     items.forEach((item) => {
-      const name = item.itemName.length > 20 ? item.itemName.substring(0, 20) : item.itemName.padEnd(20, " ");
+      const name =
+        item.itemName.length > 20
+          ? item.itemName.substring(0, 20)
+          : item.itemName.padEnd(20, " ");
       const qty = String(item.quantity).padStart(5, " ");
       printer.println(`${name} ${qty}`);
     });
@@ -110,23 +140,41 @@ const printInvoice = async (invoice) => {
     try {
       printerConfig = await defaultPrinter();
     } catch {
-      console.warn("Imprimante par défaut introuvable, tentative 'Bar Printer'...");
-      printerConfig = await prisma.printer.findFirst({ where: { name: "Bar Printer" } });
-      if (!printerConfig) throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
+      console.warn(
+        "Imprimante par défaut introuvable, tentative 'Bar Printer'..."
+      );
+      printerConfig = await prisma.printer.findFirst({
+        where: { name: "Bar Printer" },
+      });
+      if (!printerConfig)
+        throw new Error(
+          "Aucune imprimante par défaut ni 'Bar Printer' trouvée."
+        );
     }
 
     const printer = await initPrinter(printerConfig);
-    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Imprimante non connectée.");
 
     const company = await prisma.restaurant.findFirst();
     if (!company) throw new Error("Aucune information sur le restaurant.");
 
     // Logo
     if (company.logoUrl) {
-      const logoPath = path.join(__dirname, "../uploads/company/logo/", path.basename(company.logoUrl));
+      const logoPath = path.join(
+        __dirname,
+        "../uploads/company/logo/",
+        path.basename(company.logoUrl)
+      );
       if (fs.existsSync(logoPath)) {
-        const resized = path.join(__dirname, "../uploads/company/logo/resized-logo.png");
-        await sharp(logoPath).resize({ width: 300 }).toFormat("png").toFile(resized);
+        const resized = path.join(
+          __dirname,
+          "../uploads/company/logo/resized-logo.png"
+        );
+        await sharp(logoPath)
+          .resize({ width: 300 })
+          .toFormat("png")
+          .toFile(resized);
         printer.alignCenter();
         await printer.printImage(resized);
         printer.newLine();
@@ -156,10 +204,16 @@ const printInvoice = async (invoice) => {
     printer.drawLine();
 
     invoice.items.forEach((item) => {
-      const name = item.itemName.length > 15 ? item.itemName.substring(0, 15) + "." : item.itemName.padEnd(16, " ");
+      const name =
+        item.itemName.length > 15
+          ? item.itemName.substring(0, 15) + "."
+          : item.itemName.padEnd(16, " ");
       const qty = String(item.quantity).padStart(3, " ");
       const pu = formatCurrency(item.unitPrice).padStart(10, " ");
-      const total = formatCurrency(item.unitPrice * item.quantity).padStart(10, " ");
+      const total = formatCurrency(item.unitPrice * item.quantity).padStart(
+        10,
+        " "
+      );
       printer.println(`${name} ${qty} ${pu} ${total}`);
     });
 
@@ -187,10 +241,12 @@ const printCancellation = async (items, storeId, attendant) => {
       where: { id: storeId },
       include: { printer: true },
     });
-    if (!store?.printer) throw new Error("Aucune imprimante trouvée pour ce magasin.");
+    if (!store?.printer)
+      throw new Error("Aucune imprimante trouvée pour ce magasin.");
 
     const printer = await initPrinter(store.printer);
-    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Imprimante non connectée.");
 
     printer.alignCenter();
     printer.bold(true);
@@ -210,7 +266,10 @@ const printCancellation = async (items, storeId, attendant) => {
     printer.drawLine();
 
     items.forEach((item) => {
-      const name = item.itemName.length > 20 ? item.itemName.substring(0, 20) : item.itemName.padEnd(20, " ");
+      const name =
+        item.itemName.length > 20
+          ? item.itemName.substring(0, 20)
+          : item.itemName.padEnd(20, " ");
       const qty = String(item.quantity).padStart(5, " ");
       printer.println(`${name} ${qty}`);
     });
@@ -231,13 +290,21 @@ const printSignedBill = async (sale, signedBill) => {
     try {
       printerConfig = await defaultPrinter();
     } catch {
-      console.warn("Imprimante par défaut introuvable, tentative 'Bar Printer'...");
-      printerConfig = await prisma.printer.findFirst({ where: { name: "Bar Printer" } });
-      if (!printerConfig) throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
+      console.warn(
+        "Imprimante par défaut introuvable, tentative 'Bar Printer'..."
+      );
+      printerConfig = await prisma.printer.findFirst({
+        where: { name: "Bar Printer" },
+      });
+      if (!printerConfig)
+        throw new Error(
+          "Aucune imprimante par défaut ni 'Bar Printer' trouvée."
+        );
     }
 
     const printer = await initPrinter(printerConfig);
-    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Imprimante non connectée.");
 
     const company = await prisma.restaurant.findFirst();
     if (!company) throw new Error("Aucune information sur le restaurant.");
@@ -245,10 +312,20 @@ const printSignedBill = async (sale, signedBill) => {
     const printSingleCopy = async (copyFor) => {
       // Logo
       if (company.logoUrl) {
-        const logoPath = path.join(__dirname, "../uploads/company/logo/", path.basename(company.logoUrl));
+        const logoPath = path.join(
+          __dirname,
+          "../uploads/company/logo/",
+          path.basename(company.logoUrl)
+        );
         if (fs.existsSync(logoPath)) {
-          const resized = path.join(__dirname, "../uploads/company/logo/resized-logo.png");
-          await sharp(logoPath).resize({ width: 300 }).toFormat("png").toFile(resized);
+          const resized = path.join(
+            __dirname,
+            "../uploads/company/logo/resized-logo.png"
+          );
+          await sharp(logoPath)
+            .resize({ width: 300 })
+            .toFormat("png")
+            .toFile(resized);
           printer.alignCenter();
           await printer.printImage(resized);
           printer.newLine();
@@ -267,7 +344,9 @@ const printSignedBill = async (sale, signedBill) => {
 
       printer.alignLeft();
       printer.println(`ID Facture : ${signedBill.id}`);
-      printer.println(`Date : ${new Date(signedBill.createdAt).toLocaleString("fr-FR")}`);
+      printer.println(
+        `Date : ${new Date(signedBill.createdAt).toLocaleString("fr-FR")}`
+      );
       printer.println(`Serveur : ${signedBill.attendant?.name || "N/A"}`);
       printer.println(`Client : ${signedBill.client?.name || "N/A"}`);
       printer.println(`Table : ${sale.table?.number || "N/A"}`);
@@ -282,7 +361,10 @@ const printSignedBill = async (sale, signedBill) => {
 
       sale.items.forEach((item) => {
         if (item?.item?.name) {
-          const name = item.item.name.length > 15 ? item.item.name.substring(0, 15) + "." : item.item.name.padEnd(16, " ");
+          const name =
+            item.item.name.length > 15
+              ? item.item.name.substring(0, 15) + "."
+              : item.item.name.padEnd(16, " ");
           const qty = String(item.quantity).padStart(3, " ");
           const pu = formatCurrency(item.price).padStart(10, " ");
           const total = formatCurrency(item.total).padStart(10, " ");
@@ -307,7 +389,6 @@ const printSignedBill = async (sale, signedBill) => {
     await printSingleCopy("Client");
 
     await printer.execute();
-
   } catch (error) {
     console.error("Erreur impression note signée :", error);
   }
@@ -323,13 +404,21 @@ const printReceipt = async (saleOrId) => {
     try {
       printerConfig = await defaultPrinter();
     } catch {
-      console.warn("Imprimante par défaut introuvable, tentative 'Bar Printer'...");
-      printerConfig = await prisma.printer.findFirst({ where: { name: "Bar Printer" } });
-      if (!printerConfig) throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
+      console.warn(
+        "Imprimante par défaut introuvable, tentative 'Bar Printer'..."
+      );
+      printerConfig = await prisma.printer.findFirst({
+        where: { name: "Bar Printer" },
+      });
+      if (!printerConfig)
+        throw new Error(
+          "Aucune imprimante par défaut ni 'Bar Printer' trouvée."
+        );
     }
 
     const printer = await initPrinter(printerConfig);
-    if (!(await printer.isPrinterConnected())) throw new Error("Imprimante non connectée.");
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Imprimante non connectée.");
 
     // 2️⃣ Get sale data
     let sale;
@@ -353,10 +442,20 @@ const printReceipt = async (saleOrId) => {
 
     // 4️⃣ Print logo
     if (company.logoUrl) {
-      const logoPath = path.join(__dirname, "../uploads/company/logo/", path.basename(company.logoUrl));
+      const logoPath = path.join(
+        __dirname,
+        "../uploads/company/logo/",
+        path.basename(company.logoUrl)
+      );
       if (fs.existsSync(logoPath)) {
-        const resized = path.join(__dirname, "../uploads/company/logo/resized-logo.png");
-        await sharp(logoPath).resize({ width: 300 }).toFormat("png").toFile(resized);
+        const resized = path.join(
+          __dirname,
+          "../uploads/company/logo/resized-logo.png"
+        );
+        await sharp(logoPath)
+          .resize({ width: 300 })
+          .toFormat("png")
+          .toFile(resized);
         printer.alignCenter();
         await printer.printImage(resized);
         printer.newLine();
@@ -376,7 +475,9 @@ const printReceipt = async (saleOrId) => {
 
     // 6️⃣ Sale info
     printer.alignLeft();
-    printer.println(`Date : ${new Date(sale.createdAt).toLocaleString("fr-FR")}`);
+    printer.println(
+      `Date : ${new Date(sale.createdAt).toLocaleString("fr-FR")}`
+    );
     printer.println(`Serveur : ${sale.attendant?.name || "N/A"}`);
     printer.println(`Table : ${sale.table?.number || "N/A"}`);
     printer.println(`Mode de paiement : ${sale.paymentMethod || "CASH"}`);
@@ -390,7 +491,10 @@ const printReceipt = async (saleOrId) => {
 
     sale.items.forEach((item) => {
       if (!item?.item?.name) return;
-      const name = item.item.name.length > 15 ? item.item.name.substring(0, 15) + "." : item.item.name.padEnd(16, " ");
+      const name =
+        item.item.name.length > 15
+          ? item.item.name.substring(0, 15) + "."
+          : item.item.name.padEnd(16, " ");
       const qty = String(item.quantity).padStart(3, " ");
       const pu = formatCurrency(item.price).padStart(10, " ");
       const total = formatCurrency(item.total).padStart(10, " ");
@@ -416,6 +520,148 @@ const printReceipt = async (saleOrId) => {
   }
 };
 
+const printReport = async (newCloseDay) => {
+  let printerConfig;
+  try {
+    printerConfig = await defaultPrinter();
+  } catch (error) {
+    console.warn(
+      "Imprimante par défaut introuvable, tentative 'Bar Printer'..."
+    );
+    printerConfig = await prisma.printer.findFirst({
+      where: { name: "Bar Printer" },
+    });
+    if (!printerConfig)
+      throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
+  }
+
+  const printer = await initPrinter(printerConfig);
+  if (!(await printer.isPrinterConnected()))
+    throw new Error("Imprimante non connectée.");
+
+  const company = await prisma.restaurant.findFirst();
+  if (!company) throw new Error("Aucune information sur le restaurant.");
+
+  // Logo
+  if (company.logoUrl) {
+    const logoPath = path.join(
+      __dirname,
+      "../uploads/company/logo/",
+      path.basename(company.logoUrl)
+    );
+    if (fs.existsSync(logoPath)) {
+      const resized = path.join(
+        __dirname,
+        "../uploads/company/logo/resized-logo.png"
+      );
+      await sharp(logoPath)
+        .resize({ width: 300 })
+        .toFormat("png")
+        .toFile(resized);
+      printer.alignCenter();
+      await printer.printImage(resized);
+      printer.newLine();
+    }
+  }
+
+  printer.alignCenter();
+  printer.bold(true);
+  printer.println(company.name);
+  if (company.email) printer.println(company.email);
+  if (company.phone) printer.println(company.phone);
+  printer.drawLine();
+
+  printer.alignLeft();
+  printer.println("=== RAPPORT JOURNALIER ===");
+  printer.println(`Date: ${new Date(newCloseDay.date).toLocaleDateString()}`);
+  printer.println(`Caissier: ${newCloseDay.cashierName}`);
+  printer.drawLine();
+
+  printer.alignLeft();
+  printer.println("RAPPORT DE CAISSE");
+  printer.drawLine();
+  printer.bold(false);
+
+  newCloseDay.paymentSummary.forEach(({ method, total }) => {
+    printJustified(printer, method, total);
+  });
+  printJustified(printer, "FACTURE SIGNEE", newCloseDay.signedBills);
+  printJustified(printer, "RÉDUCTIONS", newCloseDay.discounts);
+  printJustified(printer, "ANNULATIONS", newCloseDay.cancellations);
+  printJustified(printer, "DÉPENSES", newCloseDay.expenses);
+  printer.drawLine();
+
+  printer.alignLeft();
+  printer.println("STATUT DE CAISSE");
+  printer.drawLine();
+
+  printJustified(printer, "ÉTAT", newCloseDay.status);
+  printJustified(printer, "DIFFÉRENCE", newCloseDay.totalDifference);
+  printJustified(printer, "TOTAL VENTES", newCloseDay.totalSales);
+  printJustified(printer, "ENCAISSÉ", newCloseDay.totalCollections);
+  printer.drawLine();
+
+  printer.alignLeft();
+  printer.println("VENTES PAR SERVEUR");
+  printer.drawLine();
+
+  newCloseDay.salesByAttendant.forEach(({ attendant, total }) => {
+    printJustified(printer, attendant, total);
+  });
+
+  printer.drawLine();
+
+  printer.alignLeft();
+  printer.println("VENTES PAR MAGASIN");
+  printer.drawLine();
+
+  const storeIds = newCloseDay.salesByStore.map((s) => s.id);
+  const stores = await prisma.store.findMany({
+    where: {
+      id: {
+        in: storeIds,
+      },
+    },
+    select: {
+      name: true,
+    },
+  });
+
+  const storeNameMap = Object.fromEntries(
+    stores.map((s) => [s._id.toString(), s.name])
+  );
+
+  newCloseDay.salesByStore.forEach((store) => {
+    const storeName = storeNameMap[store.id.toString()] || `ID: ${store.id}`;
+    printer.println(`Magasin : ${storeName}`);
+    printer.println("==========================");
+    printer.println("Article                  Qty              Total");
+    printer.drawLine();
+
+    store.items.forEach((item) => {
+      const name = padRight(item.name, 20);
+      const qty = padLeft(item.quantity, 5);
+      const total = padLeft(item.total.toLocaleString());
+      printer.println(`${name}   ${qty}           ${total}`);
+    });
+
+    printer.drawLine();
+    const storeTotal = padLeft(store.storeTotal.toLocaleString());
+    printer.println(padLeft("Total Magasin:", 25) + storeTotal);
+    printer.drawLine();
+  });
+
+  printer.alignCenter();
+  printer.println("=== END OF REPORT ===");
+  printer.cut();
+
+  try {
+    const success = await printer.execute();
+    if (!success) throw new Error("Failed to print");
+  } catch (error) {
+    console.error("Printer Error:", error.message);
+  }
+};
 
 module.exports = {
   printTestPage,
@@ -424,5 +670,6 @@ module.exports = {
   printInvoice,
   printCancellation,
   printSignedBill,
-  printReceipt
+  printReceipt,
+  printReport,
 };

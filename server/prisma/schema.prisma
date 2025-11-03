@@ -138,8 +138,8 @@ model Order {
   tableId String?
   Table   Table?  @relation("TableOrders", fields: [tableId], references: [id])
 
-  ActiveTable Table?        @relation("TableActiveOrder")
-  Discounts   Discount[]    @relation("OrderDiscounts")
+  ActiveTable Table?     @relation("TableActiveOrder")
+  Discounts   Discount[] @relation("OrderDiscounts")
 }
 
 model OrderItem {
@@ -211,8 +211,8 @@ model Sale {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  items SaleItem[]
-    signedBills    SignedBills[] @relation("SaleSignedBills")
+  items       SaleItem[]
+  signedBills SignedBills[] @relation("SaleSignedBills")
 }
 
 model SaleItem {
@@ -237,9 +237,9 @@ model Client {
 }
 
 model SignedBills {
-  id      String @id @default(cuid())
-  saleId      String
-  sale        Sale     @relation("SaleSignedBills", fields: [saleId], references: [id])
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation("SaleSignedBills", fields: [saleId], references: [id])
 
   attendantId String
   attendant   User   @relation("UserSignedBills", fields: [attendantId], references: [id])
@@ -262,6 +262,33 @@ model Expences {
   store     Store    @relation(fields: [storeId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CloseDay {
+  id               String         @id @default(cuid())
+  date             DateTime       @unique
+  cashierName      String
+  paymentSummary   Json
+  discounts        Float          @default(0)
+  cancellations    Float          @default(0)
+  totalSales       Float          @default(0)
+  totalCollections Float          @default(0)
+  expenses         Float          @default(0)
+  signedBills      Float          @default(0)
+  salesByStore     Json
+  salesByAttendant Json
+  totalDifference  Float          @default(0)
+  status           CloseDayStatus @default(BALLENCE)
+  message          String?
+  notes            String         @default("")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+enum CloseDayStatus {
+  EXCEES
+  PERTE
+  BALLENCE
 }
 
 enum OrderStatus {
