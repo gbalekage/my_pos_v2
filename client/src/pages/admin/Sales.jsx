@@ -79,6 +79,20 @@ const Sales = () => {
           });
           break;
         }
+        case "status": {
+          const key = s.status;
+          if (!groups[key]) groups[key] = { total: 0, sales: [] };
+          groups[key].total += s.totalAmount;
+          groups[key].sales.push(s);
+          break;
+        }
+        case "payment": {
+          const key = s.paymentMethod;
+          if (!groups[key]) groups[key] = { total: 0, sales: [] };
+          groups[key].total += s.totalAmount;
+          groups[key].sales.push(s);
+          break;
+        }
         default:
           break;
       }
@@ -109,6 +123,8 @@ const Sales = () => {
             <option value="attendant">Par Attendant</option>
             <option value="store">Par Magasin</option>
             <option value="item">Par Article</option>
+            <option value="status">Par Statut</option>
+            <option value="payment">Par Mode de Paiement</option>
           </select>
           <Button onClick={fetchSales}>Rafraîchir</Button>
         </div>
@@ -133,6 +149,8 @@ const Sales = () => {
                     <TableCell>Attendant</TableCell>
                     <TableCell>Table</TableCell>
                     <TableCell>Total</TableCell>
+                    <TableCell>Statut</TableCell>
+                    <TableCell>Mode de Paiement</TableCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -145,6 +163,8 @@ const Sales = () => {
                       <TableCell>{s.attendant.name}</TableCell>
                       <TableCell>{s.table?.number || "-"}</TableCell>
                       <TableCell>{s.totalAmount.toFixed(2)} FC</TableCell>
+                      <TableCell>{s.status}</TableCell>
+                      <TableCell>{s.paymentMethod}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

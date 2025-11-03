@@ -13,7 +13,9 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
   const [selectedItems, setSelectedItems] = useState({});
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
+
   const { user } = useUserStore();
   const clearUser = useUserStore((state) => state.clearUser);
   const navigate = useNavigate();
@@ -24,9 +26,9 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
       fetchItems();
       setSelectedItems({});
       setActiveCategory(null);
+      setSearchQuery("");
       setPage(1);
-      // prevent background scroll when modal open
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = "hidden"; // prevent background scroll
     } else {
       document.body.style.overflow = "";
     }
@@ -100,7 +102,7 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
 
     setLoading(true);
     try {
-      const res = await axios.post(
+      await axios.post(
         "/api/orders/create",
         {
           tableId: table.id,
@@ -119,10 +121,14 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
     }
   };
 
-  // Filter items by category
-  const filteredItems = activeCategory
-    ? items.filter((item) => item.categoryId === activeCategory.id)
-    : items;
+  // Filter items by category and search query
+  const filteredItems = (
+    activeCategory
+      ? items.filter((item) => item.categoryId === activeCategory.id)
+      : items
+  ).filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Pagination
   const totalPages = Math.max(
@@ -244,8 +250,8 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
 
         {/* RIGHT: main area (75%) */}
         <main className="flex-1 flex flex-col overflow-hidden p-6">
-          {/* Header area inside main (only on the 75% part) */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Header area inside main */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
             <div>
               <h3 className="text-xl font-semibold">Choose Items</h3>
               <p className="text-sm text-muted-foreground">
@@ -253,9 +259,10 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">Category:</div>
-              <div className="flex gap-2 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              {/* Category buttons */}
+              <div className="flex items-center gap-2 overflow-x-auto mt-2 sm:mt-0">
+                <div className="text-sm text-muted-foreground">Category:</div>
                 <button
                   className={`px-3 py-1 rounded-md border ${
                     !activeCategory ? "bg-primary text-white" : "bg-white"
@@ -286,6 +293,18 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
               </div>
             </div>
           </div>
+
+          {/* Search input */}
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-1 border rounded-md mb-4"
+            />
 
           {/* Items grid + pagination */}
           <div className="flex-1 flex flex-col overflow-hidden">
