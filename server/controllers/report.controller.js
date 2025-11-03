@@ -97,22 +97,20 @@ const getTodaySignedBillsSummary = async (req, res, next) => {
       include: {
         attendant: true,
         client: true,
-        order: {
+        sale: { 
           include: {
-            Table: true,
-            attendant: true,
-            Discounts: true,
+            table: true,
+            attendant: true,  
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    // ⚠️ If signedBills don’t have a totalAmount field, use order.totalAmount
     const totalAmount = signedBills.reduce(
-      (sum, bill) => sum + (bill.order?.totalAmount || 0),
+      (sum, bill) => sum + (bill.sale?.totalAmount || 0),
       0
-    );
+    )
 
     res.status(200).json({
       success: true,
@@ -125,6 +123,7 @@ const getTodaySignedBillsSummary = async (req, res, next) => {
     next(new HttpError("Failed to retrieve today's signed bills total."));
   }
 };
+
 
 const getTodayExpensesSummary = async (req, res, next) => {
   try {

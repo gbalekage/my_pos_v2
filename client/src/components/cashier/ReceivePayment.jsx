@@ -64,9 +64,9 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
 
   const calculateChange = () => {
     const amountNum = parseFloat(receivedAmount);
-    if (!selectedOrder || isNaN(amountNum) || amountNum < selectedOrder.totalAmount)
-      return 0;
-    return amountNum - selectedOrder.totalAmount;
+    const total = selectedOrder?.sale?.totalAmount || 0;
+    if (!selectedOrder || isNaN(amountNum) || amountNum < total) return 0;
+    return amountNum - total;
   };
 
   return (
@@ -102,9 +102,9 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
                   signedBills.map((order, index) => (
                     <TableRow key={order.id} className="cursor-pointer">
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{order.client.name}</TableCell>
+                      <TableCell>{order.client?.name || "Unknown"}</TableCell>
                       <TableCell>
-                        {order.totalAmount.toLocaleString()} FC
+                        {(order.sale?.totalAmount || 0).toLocaleString()} FC
                       </TableCell>
                       <TableCell>
                         {new Date(order.createdAt).toLocaleString("en-GB", {
@@ -147,7 +147,7 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
           <DialogHeader>
             <DialogTitle>Order Items</DialogTitle>
           </DialogHeader>
-          {selectedOrder ? (
+          {selectedOrder && selectedOrder.sale?.items?.length ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -158,18 +158,18 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {selectedOrder.items.map((i, idx) => (
+                {selectedOrder.sale.items.map((i, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{i.item?.name || "Unknown"}</TableCell>
                     <TableCell>{i.quantity}</TableCell>
-                    <TableCell>{i.price.toLocaleString()} FC</TableCell>
-                    <TableCell>{i.total.toLocaleString()} FC</TableCell>
+                    <TableCell>{(i.price || 0).toLocaleString()} FC</TableCell>
+                    <TableCell>{(i.total || 0).toLocaleString()} FC</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p>No items to display.</p>
+            <p className="p-4">No items to display.</p>
           )}
           <DialogFooter>
             <Button onClick={closeModals}>Close</Button>
@@ -220,7 +220,7 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
                   <input
                     type="number"
                     id="receivedAmount"
-                    min={selectedOrder.totalAmount}
+                    min={selectedOrder.sale?.totalAmount || 0}
                     step="0.01"
                     className="w-full border rounded p-2"
                     value={receivedAmount}
@@ -228,10 +228,12 @@ const ReceivePayment = ({ isOpen, onClose, user, onSuccess, signedBills }) => {
                     required
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    Total Due: {selectedOrder.totalAmount.toLocaleString()} FC
+                    Total Due:{" "}
+                    {(selectedOrder.sale?.totalAmount || 0).toLocaleString()} FC
                   </p>
                   {receivedAmount &&
-                    parseFloat(receivedAmount) >= selectedOrder.totalAmount && (
+                    parseFloat(receivedAmount) >=
+                      (selectedOrder.sale?.totalAmount || 0) && (
                       <p className="text-sm text-green-600 mt-1">
                         Change: {calculateChange().toLocaleString()} FC
                       </p>

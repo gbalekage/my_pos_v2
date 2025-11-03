@@ -303,10 +303,6 @@ const printSignedBill = async (sale, signedBill) => {
     // Print first copy (Restaurant)
     await printSingleCopy("Restaurant");
 
-    // Separator between copies
-    printer.println("\n========== SEPARATION ==========\n");
-    printer.cut();
-
     // Print second copy (Client)
     await printSingleCopy("Client");
 
