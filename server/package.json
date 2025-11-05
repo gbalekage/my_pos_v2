@@ -36,6 +36,7 @@
         ]
       }
     ],
+    "icon": "assets/icon.ico",
     "win": {
       "target": [
         "nsis"
@@ -45,15 +46,18 @@
     "nsis": {
       "oneClick": false,
       "perMachine": true,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "license": "license.txt",
+      "displayLanguageSelector": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   },
   "author": "BalekageGael",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.18.0",
-    "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cookies-parser": "^1.2.0",
     "cors": "^2.8.5",
