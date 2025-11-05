@@ -85,6 +85,8 @@ const HomePage = () => {
       const { user, token } = res.data;
       setUser(user, token);
 
+      console.log("Token:", token)
+
       toast.success(`Welcome, ${user.username}!`);
       setShowLogin(false);
       setPassword("");

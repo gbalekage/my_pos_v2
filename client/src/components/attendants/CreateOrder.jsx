@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Loader, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/store/userStore";
@@ -242,7 +242,7 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
                   loading ? "bg-gray-400" : "bg-primary"
                 }`}
               >
-                {loading ? "Creating..." : "Create Order"}
+                {loading ? <Loader className="animate-spin size-4" /> : "Create Order"}
               </button>
             </div>
           </footer>
@@ -257,11 +257,9 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
               <p className="text-sm text-muted-foreground">
                 Click an item to increment qty
               </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               {/* Category buttons */}
-              <div className="flex items-center gap-2 overflow-x-auto mt-2 sm:mt-0">
+              <div className="flex items-center gap-2 overflow-x-auto mt-5">
                 <div className="text-sm text-muted-foreground">Category:</div>
                 <button
                   className={`px-3 py-1 rounded-md border ${
@@ -292,6 +290,8 @@ const CreateOrder = ({ open, onClose, table, fetchTables }) => {
                 ))}
               </div>
             </div>
+            </div>
+            
           </div>
 
           {/* Search input */}

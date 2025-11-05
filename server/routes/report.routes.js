@@ -12,9 +12,14 @@ const {
 const router = express.Router();
 
 router.get("/orders/today/pending-total", authMiddleware, getOrderSummary);
-router.get("/sales/today/total", authMiddleware, getTodaySalesSummary);
+router.get("/sales/today/total", getTodaySalesSummary);
 router.get("/signedBills/today/total", getTodaySignedBillsSummary);
 router.get("/expenses/today/total", authMiddleware, getTodayExpensesSummary);
-router.post("/close/:date", authMiddleware, roleMiddleware("CASHIER"), closeDay)
+router.post(
+  "/close/:date",
+  authMiddleware,
+  roleMiddleware("CASHIER"),
+  closeDay
+);
 
 module.exports = router;

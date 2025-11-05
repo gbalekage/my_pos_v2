@@ -38,7 +38,7 @@ const initPrinter = async (printerConfig) => {
 
 function printJustified(printer, label, value, lineLength = 42) {
   const labelText = label.toUpperCase();
-  const valueText = value.toLocaleString();
+  const valueText = value?.toLocaleString() || "0";
   const spaceLength = Math.max(
     1,
     lineLength - labelText.length - valueText.length
@@ -520,146 +520,190 @@ const printReceipt = async (saleOrId) => {
   }
 };
 
-const printReport = async (newCloseDay) => {
-  let printerConfig;
+const printCloseDayReport = async (closeDay) => {
   try {
-    printerConfig = await defaultPrinter();
-  } catch (error) {
-    console.warn(
-      "Imprimante par défaut introuvable, tentative 'Bar Printer'..."
-    );
-    printerConfig = await prisma.printer.findFirst({
-      where: { name: "Bar Printer" },
-    });
-    if (!printerConfig)
-      throw new Error("Aucune imprimante par défaut ni 'Bar Printer' trouvée.");
-  }
-
-  const printer = await initPrinter(printerConfig);
-  if (!(await printer.isPrinterConnected()))
-    throw new Error("Imprimante non connectée.");
-
-  const company = await prisma.restaurant.findFirst();
-  if (!company) throw new Error("Aucune information sur le restaurant.");
-
-  // Logo
-  if (company.logoUrl) {
-    const logoPath = path.join(
-      __dirname,
-      "../uploads/company/logo/",
-      path.basename(company.logoUrl)
-    );
-    if (fs.existsSync(logoPath)) {
-      const resized = path.join(
-        __dirname,
-        "../uploads/company/logo/resized-logo.png"
-      );
-      await sharp(logoPath)
-        .resize({ width: 300 })
-        .toFormat("png")
-        .toFile(resized);
-      printer.alignCenter();
-      await printer.printImage(resized);
-      printer.newLine();
+    // === PRINTER CONFIG ===
+    let printerConfig;
+    try {
+      printerConfig = await defaultPrinter();
+    } catch {
+      printerConfig = await prisma.printer.findFirst({
+        where: { name: "Bar Printer" },
+      });
+      if (!printerConfig)
+        throw new Error("No default printer or 'Bar Printer' found.");
     }
-  }
 
-  printer.alignCenter();
-  printer.bold(true);
-  printer.println(company.name);
-  if (company.email) printer.println(company.email);
-  if (company.phone) printer.println(company.phone);
-  printer.drawLine();
+    const printer = await initPrinter(printerConfig);
+    if (!(await printer.isPrinterConnected()))
+      throw new Error("Printer not connected.");
 
-  printer.alignLeft();
-  printer.println("=== RAPPORT JOURNALIER ===");
-  printer.println(`Date: ${new Date(newCloseDay.date).toLocaleDateString()}`);
-  printer.println(`Caissier: ${newCloseDay.cashierName}`);
-  printer.drawLine();
+    // === COMPANY INFO ===
+    const company = await prisma.restaurant.findFirst();
+    if (!company) throw new Error("No restaurant info found.");
 
-  printer.alignLeft();
-  printer.println("RAPPORT DE CAISSE");
-  printer.drawLine();
-  printer.bold(false);
+    // === LOGO ===
+    if (company.logoUrl) {
+      const logoPath = path.join(
+        __dirname,
+        "../uploads/company/logo/",
+        path.basename(company.logoUrl)
+      );
+      if (fs.existsSync(logoPath)) {
+        const resized = path.join(
+          __dirname,
+          "../uploads/company/logo/resized-logo.png"
+        );
+        await sharp(logoPath).resize({ width: 300 }).toFile(resized);
+        printer.alignCenter();
+        await printer.printImage(resized);
+        printer.newLine();
+      }
+    }
 
-  newCloseDay.paymentSummary.forEach(({ method, total }) => {
-    printJustified(printer, method, total);
-  });
-  printJustified(printer, "FACTURE SIGNEE", newCloseDay.signedBills);
-  printJustified(printer, "RÉDUCTIONS", newCloseDay.discounts);
-  printJustified(printer, "ANNULATIONS", newCloseDay.cancellations);
-  printJustified(printer, "DÉPENSES", newCloseDay.expenses);
-  printer.drawLine();
-
-  printer.alignLeft();
-  printer.println("STATUT DE CAISSE");
-  printer.drawLine();
-
-  printJustified(printer, "ÉTAT", newCloseDay.status);
-  printJustified(printer, "DIFFÉRENCE", newCloseDay.totalDifference);
-  printJustified(printer, "TOTAL VENTES", newCloseDay.totalSales);
-  printJustified(printer, "ENCAISSÉ", newCloseDay.totalCollections);
-  printer.drawLine();
-
-  printer.alignLeft();
-  printer.println("VENTES PAR SERVEUR");
-  printer.drawLine();
-
-  newCloseDay.salesByAttendant.forEach(({ attendant, total }) => {
-    printJustified(printer, attendant, total);
-  });
-
-  printer.drawLine();
-
-  printer.alignLeft();
-  printer.println("VENTES PAR MAGASIN");
-  printer.drawLine();
-
-  const storeIds = newCloseDay.salesByStore.map((s) => s.id);
-  const stores = await prisma.store.findMany({
-    where: {
-      id: {
-        in: storeIds,
-      },
-    },
-    select: {
-      name: true,
-    },
-  });
-
-  const storeNameMap = Object.fromEntries(
-    stores.map((s) => [s._id.toString(), s.name])
-  );
-
-  newCloseDay.salesByStore.forEach((store) => {
-    const storeName = storeNameMap[store.id.toString()] || `ID: ${store.id}`;
-    printer.println(`Magasin : ${storeName}`);
-    printer.println("==========================");
-    printer.println("Article                  Qty              Total");
+    // === HEADER ===
+    printer.alignCenter();
+    printer.bold(true);
+    printer.println(company.name.toUpperCase());
+    printer.bold(false);
+    if (company.email) printer.println(company.email);
+    if (company.phoneNumber) printer.println(company.phoneNumber);
     printer.drawLine();
 
-    store.items.forEach((item) => {
-      const name = padRight(item.name, 20);
-      const qty = padLeft(item.quantity, 5);
-      const total = padLeft(item.total.toLocaleString());
-      printer.println(`${name}   ${qty}           ${total}`);
-    });
-
+    printer.alignLeft();
+    printer.println("=== RAPPORT JOURNALIER ===");
+    printer.println(`Date: ${new Date(closeDay.date).toLocaleDateString()}`);
+    printer.println(`Caissier: ${closeDay.cashierName}`);
     printer.drawLine();
-    const storeTotal = padLeft(store.storeTotal.toLocaleString());
-    printer.println(padLeft("Total Magasin:", 25) + storeTotal);
+
+    // === PAYMENT SUMMARY ===
+    printer.println("RAPPORT DE CAISSE");
     printer.drawLine();
-  });
+    // if (closeDay.paymentSummary?.actual) {
+    //   for (const [method, amount] of Object.entries(
+    //     closeDay.paymentSummary.actual
+    //   )) {
+    //     // const declared = closeDay.paymentSummary.declared?.[method] || 0;
+    //     printJustified(
+    //       printer,
+    //       method,
+    //       `${formatCurrency(amount)}`
+    //     );
+    //   }
+    // }
 
-  printer.alignCenter();
-  printer.println("=== END OF REPORT ===");
-  printer.cut();
+    printJustified(
+      printer,
+      "FACTURES SIGNEES",
+      formatCurrency(closeDay.signedBills)
+    );
+    printJustified(printer, "REDUCTIONS", formatCurrency(closeDay.discounts));
+    printJustified(
+      printer,
+      "ANNULATIONS",
+      formatCurrency(closeDay.cancellations)
+    );
+    printJustified(printer, "DEPENSES", formatCurrency(closeDay.expenses));
+        printJustified(
+      printer,
+      "TOTAL VENTES",
+      formatCurrency(closeDay.totalSales)
+    );
+    printer.drawLine();
 
-  try {
+    // === STATUS ===
+    printer.println("STATUT DE CAISSE");
+    printer.drawLine();
+    printJustified(printer, "ETAT", closeDay.status);
+    printJustified(
+      printer,
+      "DIFFERENCE",
+      formatCurrency(closeDay.totalDifference)
+    );
+    printJustified(
+      printer,
+      "TOTAL VENTES",
+      formatCurrency(closeDay.totalSales)
+    );
+    printJustified(
+      printer,
+      "ENCAISSE",
+      formatCurrency(closeDay.totalCollections)
+    );
+    printer.drawLine();
+
+    // === SALES BY ATTENDANT ===
+    if (
+      closeDay.salesByAttendant &&
+      Object.keys(closeDay.salesByAttendant).length > 0
+    ) {
+      printer.println("VENTES PAR SERVEUR");
+      printer.drawLine();
+      for (const [attendantName, total] of Object.entries(
+        closeDay.salesByAttendant
+      )) {
+        printJustified(printer, attendantName, formatCurrency(total));
+      }
+      printer.drawLine();
+    }
+
+    // === SALES BY STORE ===
+    if (
+      closeDay.salesByStore &&
+      Object.keys(closeDay.salesByStore).length > 0
+    ) {
+      printer.println("VENTES PAR MAGASIN");
+      printer.drawLine();
+      for (const [storeName, total] of Object.entries(closeDay.salesByStore)) {
+        printJustified(printer, storeName, formatCurrency(total));
+      }
+      printer.drawLine();
+    }
+
+    // === ITEMS SOLD ===
+    if (
+      closeDay.itemsSummary &&
+      Object.keys(closeDay.itemsSummary).length > 0
+    ) {
+      printer.println("ARTICLES VENDUS");
+      printer.drawLine();
+      for (const [itemName, summary] of Object.entries(closeDay.itemsSummary)) {
+        printJustified(printer, itemName, summary.quantity);
+      }
+      printer.drawLine();
+    }
+
+    // === EXPENSES BY STORE ===
+    if (
+      closeDay.expensesByStore &&
+      Object.keys(closeDay.expensesByStore).length > 0
+    ) {
+      printer.println("DEPENSES PAR MAGASIN");
+      printer.drawLine();
+      for (const [storeName, total] of Object.entries(
+        closeDay.expensesByStore
+      )) {
+        printJustified(printer, storeName, formatCurrency(total));
+      }
+      printer.drawLine();
+    }
+
+    // === NOTES ===
+    if (closeDay.notes) {
+      printer.println("NOTES:");
+      printer.println(closeDay.notes);
+      printer.drawLine();
+    }
+
+    // === FOOTER ===
+    printer.alignCenter();
+    printer.println("=== FIN DU RAPPORT ===");
+    printer.cut();
+
     const success = await printer.execute();
-    if (!success) throw new Error("Failed to print");
+    if (!success) throw new Error("Printing failed");
   } catch (error) {
-    console.error("Printer Error:", error.message);
+    console.error("Error printing close day report:", error.message);
   }
 };
 
@@ -671,5 +715,5 @@ module.exports = {
   printCancellation,
   printSignedBill,
   printReceipt,
-  printReport,
+  printCloseDayReport,
 };

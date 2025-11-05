@@ -266,7 +266,7 @@ model Expences {
 
 model CloseDay {
   id               String         @id @default(cuid())
-  date             DateTime       @unique
+  date             DateTime
   cashierName      String
   paymentSummary   Json
   discounts        Float          @default(0)
@@ -276,6 +276,7 @@ model CloseDay {
   expenses         Float          @default(0)
   signedBills      Float          @default(0)
   salesByStore     Json
+  itemsSummary     Json?
   salesByAttendant Json
   totalDifference  Float          @default(0)
   status           CloseDayStatus @default(BALLENCE)

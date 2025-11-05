@@ -22,6 +22,7 @@ const paymentMethods = [
 
 const CloseDay = ({ isOpen, onClose, onSuccess }) => {
   const [declaredAmounts, setDeclaredAmounts] = useState({});
+  const [declaredExpenses, setDeclaredExpense] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -49,6 +50,7 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
         `/api/repports/close/${date}`,
         {
           declaredAmounts,
+          declaredExpenses,
           notes,
         },
         { withCredentials: true }
@@ -111,6 +113,17 @@ const CloseDay = ({ isOpen, onClose, onSuccess }) => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Depenses</label>
+          <input
+            className="border border-gray-300 rounded-lg px-3 py-2 shadow-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={declaredExpenses}
+            type="number"
+            onChange={(e) => setDeclaredExpense(e.target.value)}
+            placeholder="Depenses"
+          />
         </div>
 
         {/* Notes */}
