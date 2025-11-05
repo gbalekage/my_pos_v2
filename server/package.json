@@ -2,11 +2,12 @@
   "name": "pos_system-server",
   "version": "2.0.0",
   "description": "POS System v2 — A complete point-of-sale system for restaurants and bars, featuring user roles (Admin, Cashier, Attendant), real-time printing, daily reports, and multi-store management. Built with Node.js, Express, and MySQL",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev": "concurrently \"nodemon index.js\" \"wait-on tcp:5000 && electron .\"",
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "electron": "electron .",
+    "build": "electron-builder"
   },
   "keywords": [
     "pos",
@@ -16,10 +17,41 @@
     "real-time-printing",
     "multi-store"
   ],
+  "build": {
+    "appId": "com.balekage.possystem",
+    "productName": "POS-SERVER",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "prisma/",
+        "to": "prisma/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "author": "BalekageGael",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^6.18.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
@@ -27,6 +59,7 @@
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
+    "electron-store": "^11.0.2",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.2",
     "express-validator": "^7.2.1",
@@ -34,13 +67,19 @@
     "morgan": "^1.10.1",
     "mysql2": "^3.15.2",
     "node-thermal-printer": "^4.5.0",
+    "node-windows": "^1.0.0-beta.8",
+    "pg": "^8.16.3",
     "prisma": "^6.17.1",
     "sharp": "^0.34.4",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^39.1.0",
+    "electron-builder": "^26.0.12",
     "eslint": "^9.38.0",
     "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "wait-on": "^9.0.1"
   }
 }

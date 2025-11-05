@@ -1,7 +1,7 @@
+// index.js
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-
 
 const adminRoutes = require("./routes/admin.routes");
 const userRoutes = require("./routes/user.routes");
@@ -16,8 +16,8 @@ const ordersRoutes = require("./routes/order.routes");
 const salesRoutes = require("./routes/sales.routes");
 const clientsRoutes = require("./routes/client.routes");
 const cancellationsRoutes = require("./routes/cancellations.routes");
-const reportsRoutes = require("./routes/report.routes")
-const exprenseRoutes = require("./routes/expense.routes")
+const reportsRoutes = require("./routes/report.routes");
+const expenseRoutes = require("./routes/expense.routes");
 
 const { notFound, errorHandler } = require("./middlewares/error.middleware");
 const fileUpload = require("express-fileupload");
@@ -26,19 +26,20 @@ const { checkSubscriptionDurations } = require("./helpers/subscription.helper");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
+// Middlewares
 app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
 app.use(express.json());
 app.use(fileUpload());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Check subscriptions (can run in background)
 checkSubscriptionDurations()
   .then(() => console.log("Subscription check completed"))
   .catch((err) => console.error("Error checking subscriptions:", err));
 
-// routes
+// Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/company", companyRoutes);
@@ -52,9 +53,10 @@ app.use("/api/tables", tablesRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/clients", clientsRoutes);
 app.use("/api/cancellations", cancellationsRoutes);
-app.use("/api/repports", reportsRoutes)
-app.use("/api/expenses", exprenseRoutes)
+app.use("/api/repports", reportsRoutes);
+app.use("/api/expenses", expenseRoutes);
 
+// Health check & root
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is online" });
 });
@@ -63,9 +65,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to the POS System API");
 });
 
+// Error handlers
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+module.exports = app;

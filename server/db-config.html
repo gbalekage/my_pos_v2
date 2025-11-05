@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DB Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-96 relative">
+      <h3 class="text-2xl font-semibold mb-6 text-center">DB Configuration</h3>
+
+      <!-- Loader -->
+      <div
+        id="loader"
+        class="absolute inset-0 bg-white bg-opacity-70 items-center justify-center rounded-2xl hidden"
+      >
+        <div class="flex flex-col items-center">
+          <div
+            class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin"
+          ></div>
+          <span id="loader-text" class="text-gray-700 font-semibold"
+            >Processing...</span
+          >
+        </div>
+      </div>
+
+      <form id="dbForm" class="space-y-4">
+        <div class="flex items-center gap-4">
+          <input
+            name="host"
+            placeholder="Host"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            name="port"
+            placeholder="Port"
+            value="5432"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <input
+          name="user"
+          placeholder="User"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          name="database"
+          placeholder="Database"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <button
+          type="submit"
+          id="save-btn"
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+        >
+          Save
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      const loader = document.getElementById("loader");
+      const loaderText = document.getElementById("loader-text");
+      const saveBtn = document.getElementById("save-btn");
+
+      async function loadConfig() {
+        const config = await ipcRenderer.invoke("get-db-config");
+        if (config) {
+          const form = document.getElementById("dbForm");
+          Object.keys(config).forEach((key) => (form[key].value = config[key]));
+        }
+      }
+
+      function showLoader(text) {
+        loaderText.textContent = text;
+        loader.classList.remove("hidden");
+        saveBtn.disabled = true;
+      }
+
+      function hideLoader() {
+        loader.classList.add("hidden");
+        saveBtn.disabled = false;
+      }
+
+      document
+        .getElementById("dbForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const config = {
+            host: form.host.value,
+            port: form.port.value,
+            user: form.user.value,
+            password: form.password.value,
+            database: form.database.value,
+          };
+
+          try {
+            showLoader("Testing database connection...");
+            const result = await ipcRenderer.invoke("save-db-config", config);
+
+            if (!result.success) {
+              hideLoader();
+              alert(result.message);
+              return;
+            }
+
+            showLoader("Starting server...");
+            // Server will start automatically from main process
+          } catch (err) {
+            alert("An unexpected error occurred: " + err.message);
+          } finally {
+            hideLoader();
+          }
+        });
+
+      loadConfig();
+    </script>
+
+    <style>
+      .loader {
+        border-top-color: #3498db;
+      }
+    </style>
+  </body>
+</html>

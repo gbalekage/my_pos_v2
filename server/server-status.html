@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Server Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
+      <h2 class="text-2xl font-semibold mb-4 text-center">Server Logs</h2>
+
+      <div
+        id="logs"
+        class="border border-gray-300 rounded-md p-3 mb-4 h-[400px] overflow-y-scroll font-mono text-sm bg-gray-50"
+      ></div>
+
+      <div class="flex justify-center">
+        <button
+          id="restart-btn"
+          class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+        >
+          Restart Server
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+      const logContainer = document.getElementById("logs");
+      const restartBtn = document.getElementById("restart-btn");
+
+      // Display logs in real-time
+      ipcRenderer.on("server-log", (event, message) => {
+        const p = document.createElement("p");
+        p.textContent = message;
+        logContainer.appendChild(p);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      });
+
+      // Restart button click handler
+      restartBtn.addEventListener("click", async () => {
+        restartBtn.disabled = true;
+        restartBtn.textContent = "Restarting...";
+        const result = await ipcRenderer.invoke("restart-server");
+        if (result.success) {
+          const p = document.createElement("p");
+          p.textContent = "✅ Server restarted successfully.";
+          p.classList.add("text-green-600");
+          logContainer.appendChild(p);
+        } else {
+          const p = document.createElement("p");
+          p.textContent = "❌ Failed to restart server: " + result.message;
+          p.classList.add("text-red-600");
+          logContainer.appendChild(p);
+        }
+        logContainer.scrollTop = logContainer.scrollHeight;
+        restartBtn.textContent = "Restart Server";
+        restartBtn.disabled = false;
+      });
+    </script>
+  </body>
+</html>
