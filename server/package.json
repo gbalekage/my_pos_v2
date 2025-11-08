@@ -36,7 +36,6 @@
         ]
       }
     ],
-    "icon": "assets/icon.ico",
     "win": {
       "target": [
         "nsis"
