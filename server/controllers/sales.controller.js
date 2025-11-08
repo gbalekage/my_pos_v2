@@ -35,7 +35,7 @@ const getSales = async (req, res) => {
 
     return res.status(200).json({ sales });
   } catch (error) {
-    console.error(error);
+    console.log("Error geting the sales",error);
     return res
       .status(500)
       .json({ message: "Error fetching sales.", error: error.message });
@@ -95,7 +95,7 @@ const getSalesForAdmin = async (req, res) => {
 
     return res.status(200).json({ sales: salesWithTotal });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res
       .status(500)
       .json({ message: "Error fetching sales", error: error.message });

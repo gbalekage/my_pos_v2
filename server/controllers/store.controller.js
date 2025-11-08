@@ -30,7 +30,7 @@ const createStore = async (req, res, next) => {
       store: newStore,
     });
   } catch (error) {
-    console.error("Error creating the store", error);
+    console.log("Error creating the store", error);
     return next(new HttpError("Server error", 500));
   }
 };
@@ -88,7 +88,7 @@ const updateStore = async (req, res, next) => {
       store: updatedStore,
     });
   } catch (error) {
-    console.error("Error updating the store", error);
+    console.log("Error updating the store", error);
     return next(new HttpError("Server error", 500));
   }
 };
@@ -103,7 +103,7 @@ const deleteStore = async (req, res, next) => {
 
     res.status(200).json({ message: "Store deleted successfully" });
   } catch (error) {
-    console.error("Error deleting store", error);
+    console.log("Error deleting store", error);
     return next(new HttpError("Error deleting store, please try again", 500));
   }
 };

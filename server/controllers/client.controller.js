@@ -29,7 +29,7 @@ const addClient = async (req, res, next) => {
 
     res.status(201).json({ client: newClient });
   } catch (error) {
-    console.error("Error in create client", error);
+    console.log("Error in create client", error);
     return next(new HttpError("Creating client failed, please try again", 500));
   }
 };
@@ -41,7 +41,7 @@ const getClients = async (req, res, next) => {
     });
     res.status(200).json({ clients });
   } catch (error) {
-    console.error("Error in get clients", error);
+    console.log("Error in get clients", error);
     return next(
       new HttpError("Fetching clients failed, please try again", 500)
     );
@@ -61,7 +61,7 @@ const getClientById = async (req, res, next) => {
 
     res.status(200).json({ client });
   } catch (error) {
-    console.error("Error in get client by ID", error);
+    console.log("Error in get client by ID", error);
     return next(new HttpError("Fetching client failed, please try again", 500));
   }
 };
@@ -78,7 +78,7 @@ const updateClient = async (req, res, next) => {
 
     res.status(200).json({ client: updatedClient });
   } catch (error) {
-    console.error("Error in update client", error);
+    console.log("Error in update client", error);
     return next(new HttpError("Updating client failed, please try again", 500));
   }
 };
@@ -93,7 +93,7 @@ const deleteClient = async (req, res, next) => {
 
     res.status(200).json({ message: "Client deleted successfully" });
   } catch (error) {
-    console.error("Error in delete client", error);
+    console.log("Error in delete client", error);
     return next(new HttpError("Deleting client failed, please try again", 500));
   }
 };

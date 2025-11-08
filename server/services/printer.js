@@ -78,7 +78,7 @@ const printTestPage = async (printerConfig) => {
 
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression page test :", error);
+    console.log("Erreur impression page test :", error);
   }
 };
 
@@ -127,7 +127,7 @@ const printOrder = async (items, storeId, attendantName) => {
     printer.cut();
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression commande :", error);
+    console.log("Erreur impression commande :", error);
   }
 };
 
@@ -228,7 +228,7 @@ const printInvoice = async (invoice) => {
 
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression facture :", error);
+    console.log("Erreur impression facture :", error);
   }
 };
 
@@ -277,7 +277,7 @@ const printCancellation = async (items, storeId, attendant) => {
     printer.cut();
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression annulation :", error);
+    console.log("Erreur impression annulation :", error);
   }
 };
 
@@ -390,7 +390,7 @@ const printSignedBill = async (sale, signedBill) => {
 
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression note signée :", error);
+    console.log("Erreur impression note signée :", error);
   }
 };
 
@@ -516,7 +516,7 @@ const printReceipt = async (saleOrId) => {
 
     await printer.execute();
   } catch (error) {
-    console.error("Erreur impression reçu :", error);
+    console.log("Erreur impression reçu :", error);
   }
 };
 
@@ -703,7 +703,7 @@ const printCloseDayReport = async (closeDay) => {
     const success = await printer.execute();
     if (!success) throw new Error("Printing failed");
   } catch (error) {
-    console.error("Error printing close day report:", error.message);
+    console.log("Error printing close day report:", error.message);
   }
 };
 

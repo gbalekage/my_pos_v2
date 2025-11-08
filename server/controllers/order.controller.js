@@ -100,7 +100,7 @@ const createOrder = async (req, res, next) => {
       try {
         await printOrder(storeItemMap[storeId], storeId, user.name);
       } catch (error) {
-        console.error("Print error:", error);
+        console.log("Print error:", error);
       }
     }
 
@@ -109,7 +109,7 @@ const createOrder = async (req, res, next) => {
       order,
     });
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.log("Error creating order:", error);
     return res.status(500).json({
       message: "Failed to create the order",
       error: error.message,
@@ -194,7 +194,7 @@ const printBill = async (req, res, next) => {
       message: "Facture imprimée avec succès.",
     });
   } catch (error) {
-    console.error("Erreur d'impression de la facture:", error);
+    console.log("Erreur d'impression de la facture:", error);
     return next(new HttpError(error.message || "Erreur interne serveur.", 500));
   }
 };
@@ -287,7 +287,7 @@ const addItemsToOrder = async (req, res, next) => {
       try {
         await printOrder(storeItemMap[storeId], storeId, user.name);
       } catch (error) {
-        console.error("Print error (added items):", error);
+        console.log("Print error (added items):", error);
       }
     }
 
@@ -295,7 +295,7 @@ const addItemsToOrder = async (req, res, next) => {
       message: "Items added successfully and printed.",
     });
   } catch (error) {
-    console.error("Error adding items to order:", error);
+    console.log("Error adding items to order:", error);
     return next(
       new HttpError(error.message || "Failed to add items to order", 500)
     );
@@ -425,7 +425,7 @@ const removeItems = async (req, res, next) => {
             order.attendant?.name || ""
           );
         } catch (err) {
-          console.error("Error printing cancellations for store", storeId, err);
+          console.log("Error printing cancellations for store", storeId, err);
         }
       }
 
@@ -461,7 +461,7 @@ const removeItems = async (req, res, next) => {
           order.attendant?.name || ""
         );
       } catch (err) {
-        console.error("Error printing cancellations for store", storeId, err);
+        console.log("Error printing cancellations for store", storeId, err);
       }
     }
 
@@ -469,7 +469,7 @@ const removeItems = async (req, res, next) => {
       message: "Selected items cancelled, order updated and stock restored.",
     });
   } catch (error) {
-    console.error("removeItems error:", error);
+    console.log("removeItems error:", error);
     return res.status(500).json({
       message: "Error while cancelling items.",
       error: error.message,
@@ -538,7 +538,7 @@ const discountOrder = async (req, res, next) => {
       discount,
     });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res.status(500).json({
       message: "Erreur lors de l'application de la réduction.",
       error: error.message,
@@ -691,7 +691,7 @@ const splitBill = async (req, res) => {
       newOrder,
     });
   } catch (error) {
-    console.error("Erreur splitBill:", error);
+    console.log("Erreur splitBill:", error);
     return res.status(500).json({
       message: "Erreur lors de la division de la facture.",
       error: error.message,
@@ -773,7 +773,7 @@ const breakItemInOrder = async (req, res) => {
       totalAmount: newTotalAmount,
     });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res.status(500).json({
       message: "Error while splitting item in the order.",
       error: error.message,
@@ -805,7 +805,7 @@ const getActiveOrders = async (req, res) => {
 
     return res.status(200).json({ orders });
   } catch (error) {
-    console.error("Error fetching active orders:", error);
+    console.log("Error fetching active orders:", error);
     return res.status(500).json({
       message: "Erreur lors du chargement des commandes actives.",
       error: error.message,
@@ -928,7 +928,7 @@ const payOrder = async (req, res, next) => {
       change,
     });
   } catch (error) {
-    console.error("Erreur lors du paiement:", error);
+    console.log("Erreur lors du paiement:", error);
     return res.status(500).json({
       message: "Erreur lors du paiement de la commande.",
       error: error.message,
@@ -1034,7 +1034,7 @@ const signBill = async (req, res, next) => {
       signedBill,
     });
   } catch (error) {
-    console.error("❌ Error signing bill:", error);
+    console.log("❌ Error signing bill:", error);
     return res.status(500).json({
       message: "Error while signing order.",
       error: error.message,
@@ -1101,7 +1101,7 @@ const receivePayment = async (req, res, next) => {
       message: "Commande payée et enregistrée dans les ventes.",
     });
   } catch (error) {
-    console.error("Erreur lors du paiement:", error);
+    console.log("Erreur lors du paiement:", error);
     return res.status(500).json({
       message: "Erreur lors du paiement de la commande.",
       error: error.message,

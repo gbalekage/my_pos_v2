@@ -36,7 +36,7 @@ const createTables = async (req, res, next) => {
       created,
     });
   } catch (error) {
-    console.error("error creating tables:", error);
+    console.log("error creating tables:", error);
     return next(new HttpError("Failed to create tables", 500));
   }
 };
@@ -50,7 +50,7 @@ const getTables = async (req, res, next) => {
 
     res.status(200).json({ tables });
   } catch (error) {
-    console.error("error getting tables:", error);
+    console.log("error getting tables:", error);
     return next(new HttpError("Faild to get tables", 500));
   }
 };
@@ -66,7 +66,7 @@ const getTableById = async (req, res, next) => {
       return next(new HttpError("Table not found", 404));
     }
   } catch (error) {
-    console.error("Error geting the table");
+    console.log("Error geting the table");
     return next(new HttpError("Faild to get the table", 500));
   }
 };

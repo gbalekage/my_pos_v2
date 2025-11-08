@@ -41,7 +41,7 @@ const createUser = async (req, res, next) => {
     const { password: _, ...userData } = newUser;
     res.status(201).json({ user: userData });
   } catch (error) {
-    console.error("Error creating admin user", error);
+    console.log("Error creating admin user", error);
     return next(
       new HttpError("Erreur creating admin user, please try again", 500)
     );
@@ -96,7 +96,7 @@ const loginUser = async (req, res, next) => {
       token,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.log("Login error:", error);
     return next(new HttpError("Login failed, please try again", 500));
   }
 };
@@ -119,7 +119,7 @@ const verifyAdmin = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Admin verified" });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -144,7 +144,7 @@ const getUser = async (req, res, next) => {
       user: userData,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.log("Login error:", error);
     return next(new HttpError("Login failed, please try again", 500));
   }
 };
@@ -173,7 +173,7 @@ const getUsers = async (req, res, next) => {
 
     res.status(200).json({ users });
   } catch (error) {
-    console.error("❌ Error fetching users:", error);
+    console.log("❌ Error fetching users:", error);
     return next(new HttpError("Failed to fetch users", 500));
   }
 };
@@ -219,7 +219,7 @@ const updateUser = async (req, res, next) => {
       user: updatedUser,
     });
   } catch (error) {
-    console.error("❌ Error updating user:", error);
+    console.log("❌ Error updating user:", error);
     return next(new HttpError("Failed to update user", 500));
   }
 };
@@ -255,7 +255,7 @@ const deactivateUser = async (req, res, next) => {
       user: deactivatedUser,
     });
   } catch (error) {
-    console.error("❌ Error deactivating user:", error);
+    console.log("❌ Error deactivating user:", error);
     return next(new HttpError("Failed to deactivate user", 500));
   }
 };
@@ -291,7 +291,7 @@ const suspendUser = async (req, res, next) => {
       user: suspendedUser,
     });
   } catch (error) {
-    console.error("❌ Error suspending user:", error);
+    console.log("❌ Error suspending user:", error);
     return next(new HttpError("Failed to suspend user", 500));
   }
 };
@@ -312,7 +312,7 @@ const deleteUser = async (req, res, next) => {
       userId: id,
     });
   } catch (error) {
-    console.error("Error deleting user:", error);
+    console.log("Error deleting user:", error);
     return next(new HttpError("Failed to delete user", 500));
   }
 };
@@ -348,7 +348,7 @@ const updateUserPassword = async (req, res, next) => {
 
     res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("❌ Error updating password:", error);
+    console.log("❌ Error updating password:", error);
     return next(new HttpError("Failed to update password", 500));
   }
 };
@@ -361,7 +361,7 @@ const getAttendants = async (req, res) => {
     });
     res.status(200).json({ attendants });
   } catch (error) {
-    console.error("Error fetching attendants:", error);
+    console.log("Error fetching attendants:", error);
     res.status(500).json({ message: "Failed to fetch attendants" });
   }
 };
@@ -390,7 +390,7 @@ const getMe = async (req, res) => {
 
     return res.status(200).json({ user: userData });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.log("Error fetching user:", error);
     return res.status(500).json({ message: "Error loading user data." });
   }
 };

@@ -38,7 +38,7 @@ const createAdminUser = async (req, res, next) => {
 
     res.status(201).json({ admin: newAdmin });
   } catch (error) {
-    console.error("Error creating admin user", error);
+    console.log("Error creating admin user", error);
     return next(
       new HttpError("Erreur creating admin user, please try again", 500)
     );
@@ -67,7 +67,7 @@ const getAdmin = async (req, res, next) => {
     }
     return res.status(200).json({ admin });
   } catch (error) {
-    console.error("❌ Error fetching admin:", error);
+    console.log("❌ Error fetching admin:", error);
     return res.status(500).json({ message: error.message });
   }
 };

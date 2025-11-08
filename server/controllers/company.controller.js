@@ -19,12 +19,12 @@ const safeLogError = (label, err) => {
   try {
     const msg = err && err.message ? err.message : String(err);
     if (process.env.NODE_ENV === "development") {
-      console.error(label, msg, err && err.stack ? err.stack : "");
+      console.log(label, msg, err && err.stack ? err.stack : "");
     } else {
-      console.error(label, msg);
+      console.log(label, msg);
     }
   } catch (e) {
-    console.error(label, "(error while logging)");
+    console.log(label, "(error while logging)");
   }
 };
 

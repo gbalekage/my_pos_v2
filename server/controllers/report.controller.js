@@ -44,7 +44,7 @@ const getOrderSummary = async (req, res, next) => {
       pendingOrders,
     });
   } catch (error) {
-    console.error("Error getting total amount for pending orders:", error);
+    console.log("Error getting total amount for pending orders:", error);
     next(new HttpError("Failed to retrieve today's pending orders total."));
   }
 };
@@ -80,7 +80,7 @@ const getTodaySalesSummary = async (req, res, next) => {
       todaySales,
     });
   } catch (error) {
-    console.error("Error getting total amount for today sales:", error);
+    console.log("Error getting total amount for today sales:", error);
     next(new HttpError("Failed to retrieve today's sales total."));
   }
 };
@@ -121,7 +121,7 @@ const getTodaySignedBillsSummary = async (req, res, next) => {
       signedBills,
     });
   } catch (error) {
-    console.error("Error getting total amount for today signed bills:", error);
+    console.log("Error getting total amount for today signed bills:", error);
     next(new HttpError("Failed to retrieve today's signed bills total."));
   }
 };
@@ -153,12 +153,10 @@ const getTodayExpensesSummary = async (req, res, next) => {
       expenses,
     });
   } catch (error) {
-    console.error("Error getting total amount for today expenses:", error);
+    console.log("Error getting total amount for today expenses:", error);
     next(new HttpError("Failed to retrieve today's expenses total."));
   }
 };
-
-// const closeDay = async (req, res) => {
 //   try {
 //     const { declaredAmounts, notes } = req.body;
 //     const cashierId = req.user.id;
@@ -339,7 +337,7 @@ const getTodayExpensesSummary = async (req, res, next) => {
 
 //     return res.json({ success: true, closeDay: newCloseDay });
 //   } catch (error) {
-//     console.error("❌ Close day error:", error);
+//     console.log("❌ Close day error:", error);
 //     return res.status(500).json({
 //       success: false,
 //       message: "Server error",
@@ -530,7 +528,7 @@ const closeDay = async (req, res) => {
       closeDay: closeDay,
     });
   } catch (error) {
-    console.error("Error in close day:", error);
+    console.log("Error in close day:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error.",

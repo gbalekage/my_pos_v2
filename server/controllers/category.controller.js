@@ -30,7 +30,7 @@ const addCategory = async (req, res, next) => {
       category: newCategory,
     });
   } catch (error) {
-    console.error("Error creating the store", error);
+    console.log("Error creating the store", error);
     return next(new HttpError("Server error", 500));
   }
 };
@@ -58,7 +58,7 @@ const getCategryById = async (req, res, next) => {
 
     res.status(200).json({ category });
   } catch (error) {
-    console.error("Error fetching categories", error);
+    console.log("Error fetching categories", error);
     return next(
       new HttpError("Error fetching categories, please try again", 500)
     );
@@ -85,7 +85,7 @@ const updateCategory = async (req, res, next) => {
       store: updatedCategory,
     });
   } catch (error) {
-    console.error("Error updating the category", error);
+    console.log("Error updating the category", error);
     return next(new HttpError("Server category", 500));
   }
 };
@@ -100,7 +100,7 @@ const deleteCategory = async (req, res, next) => {
 
     res.status(200).json({ message: "Category deleted successfully" });
   } catch (error) {
-    console.error("Error deleting Category", error);
+    console.log("Error deleting Category", error);
     return next(
       new HttpError("Error deleting Category, please try again", 500)
     );

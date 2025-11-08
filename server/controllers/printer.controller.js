@@ -39,7 +39,7 @@ const addPrinter = async (req, res, next) => {
       printer: newPrinter,
     });
   } catch (error) {
-    console.error("Error adding printer:", error);
+    console.log("Error adding printer:", error);
     return next(new HttpError(error.message || "Server error", 500));
   }
 };
@@ -49,7 +49,7 @@ const getPrinters = async (req, res, next) => {
     const printers = await prisma.printer.findMany();
     res.status(200).json({ printers });
   } catch (error) {
-    console.error("Error fetching printers", error);
+    console.log("Error fetching printers", error);
     return next(
       new HttpError("Error fetching printers, please try again", 500)
     );
@@ -69,7 +69,7 @@ const getPrinter = async (req, res, next) => {
 
     res.status(200).json({ printer });
   } catch (error) {
-    console.error("Error fetching printer", error);
+    console.log("Error fetching printer", error);
     return next(new HttpError("Error fetching printer, please try again", 500));
   }
 };
@@ -105,7 +105,7 @@ const updatePrinter = async (req, res, next) => {
       printer: updatedPrinter,
     });
   } catch (error) {
-    console.error("Error updating printer:", error);
+    console.log("Error updating printer:", error);
     return next(new HttpError("Error updating printer, please try again", 500));
   }
 };
@@ -120,7 +120,7 @@ const deletePrinter = async (req, res, next) => {
 
     res.status(200).json({ message: "Printer deleted successfully" });
   } catch (error) {
-    console.error("Error deleting printer", error);
+    console.log("Error deleting printer", error);
     return next(new HttpError("Error deleting printer, please try again", 500));
   }
 };
@@ -131,7 +131,7 @@ const testPrinter = async (req, res, next) => {
 
     const printer = await prisma.printer.findUnique({
       where: {
-        id: printerId
+        id: printerId,
       },
     });
     if (!printer) {
@@ -142,7 +142,7 @@ const testPrinter = async (req, res, next) => {
 
     res.status(200).json({ message: "Test print sent successfully." });
   } catch (error) {
-    console.error("Error testing printer:", error);
+    console.log("Error testing printer:", error);
     res
       .status(500)
       .json({ message: "Failed to test printer.", error: error.message });

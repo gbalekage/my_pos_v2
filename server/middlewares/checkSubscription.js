@@ -40,7 +40,7 @@ const checkSubscription = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Error checking subscription:", error);
+    console.log("Error checking subscription:", error);
     return next(new HttpError("Internal server error", 500));
   }
 };

@@ -30,7 +30,7 @@ const checkSubscriptionDurations = async () => {
 
     
   } catch (error) {
-    console.error("Error checking subscription durations:", error);
+    console.log("Error checking subscription durations:", error);
   }
 };
 

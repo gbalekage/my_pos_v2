@@ -65,7 +65,7 @@ const chooseSubscription = async (req, res, next) => {
       subscription: newSubscription,
     });
   } catch (error) {
-    console.error("Error in chooseSubscription:", error);
+    console.log("Error in chooseSubscription:", error);
     return next(
       new HttpError("Creating subscription failed, please try again", 500)
     );
@@ -111,7 +111,7 @@ const activateSubscription = async (req, res, next) => {
         });
 
     } catch (error) {
-        console.error("Error in activateSubscription:", error);
+        console.log("Error in activateSubscription:", error);
         return next(new HttpError("Activating subscription failed, please try again", 500));
     }
 }
@@ -162,7 +162,7 @@ const renewSubscription = async (req, res, next) => {
       subscription: renewedSubscription,
     });
   } catch (error) {
-    console.error("Error in renewSubscription:", error);
+    console.log("Error in renewSubscription:", error);
     return next(
       new HttpError("Renewing subscription failed, please try again", 500)
     );
@@ -219,7 +219,7 @@ const changeSubscriptionPlan = async (req, res, next) => {
       subscription: updatedSubscription,
     });
   } catch (error) {
-    console.error("Error in changeSubscriptionPlan:", error);
+    console.log("Error in changeSubscriptionPlan:", error);
     return next(
       new HttpError("Changing subscription plan failed, please try again", 500)
     );
@@ -251,7 +251,7 @@ const getSubscription = async (req, res, next) => {
       subscription: activeSubscription,
     });
   } catch (error) {
-    console.error("Error in getActiveSubscription:", error);
+    console.log("Error in getActiveSubscription:", error);
     return next(
       new HttpError("Fetching active subscription failed, please try again", 500)
     );

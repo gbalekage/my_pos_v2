@@ -1,4 +1,3 @@
-// index.js
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -27,19 +26,16 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// Middlewares
-app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
 app.use(fileUpload());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Check subscriptions (can run in background)
 checkSubscriptionDurations()
   .then(() => console.log("Subscription check completed"))
   .catch((err) => console.error("Error checking subscriptions:", err));
 
-// Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/company", companyRoutes);
@@ -56,7 +52,6 @@ app.use("/api/cancellations", cancellationsRoutes);
 app.use("/api/repports", reportsRoutes);
 app.use("/api/expenses", expenseRoutes);
 
-// Health check & root
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is online" });
 });
@@ -65,7 +60,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the POS System API");
 });
 
-// Error handlers
 app.use(notFound);
 app.use(errorHandler);
 

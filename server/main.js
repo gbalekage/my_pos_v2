@@ -4,6 +4,19 @@ const Store = require("electron-store").default;
 const { exec } = require("child_process");
 const { Client } = require("pg");
 const fs = require("fs");
+const os = require("os");
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const iface of Object.values(interfaces)) {
+    for (const config of iface) {
+      if (config.family === "IPv4" && !config.internal) {
+        return config.address;
+      }
+    }
+  }
+  return "127.0.0.1";
+}
 
 const store = new Store();
 let mainWindow;
@@ -83,7 +96,7 @@ function updateEnvFile(config) {
     fs.writeFileSync(envPath, envContent, "utf-8");
     console.log(".env updated successfully at", envPath);
   } catch (err) {
-    console.error("Failed to create/update .env:", err);
+    console.log("Failed to create/update .env:", err);
   }
 }
 
@@ -114,20 +127,21 @@ function startServer() {
   }
 
   try {
-    const appServer = require("./index"); // Express app export
+    const appServer = require("./index");
+    const localIP = getLocalIP(); // ✅ auto-detect local IP
     const PORT = 5000;
 
-    currentServer = appServer.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
+    currentServer = appServer.listen(PORT, localIP, () => {
+      console.log(`✅ Server running on http://${localIP}:${PORT}`);
     });
 
     currentServer.on("error", (err) => {
-      console.error("❌ Server error:", err.message);
+      console.log("❌ Server error:", err.message);
     });
 
     return currentServer;
   } catch (err) {
-    console.error("❌ Failed to start server:", err.message);
+    console.log("❌ Failed to start server:", err.message);
     currentServer = null;
     return null;
   }

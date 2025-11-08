@@ -27,7 +27,7 @@ const addExpenses = async (req, res, next) => {
       expense: newExpense,
     });
   } catch (error) {
-    console.error("Failed adding expenses", error);
+    console.log("Failed adding expenses", error);
     return next(new HttpError("Failed to add expenses", 500));
   }
 };
